@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/layout/Header";
@@ -8,59 +8,92 @@ import {
   ChevronRight, 
   Shield, 
   Users, 
-  HeartHandshake, 
   Brain, 
+  MessageSquare, 
   Bot, 
-  BarChart4 
+  BarChart4,
+  Leaf 
 } from "lucide-react";
 
 const Index: React.FC = () => {
+  const leafRefs = useRef<(HTMLDivElement | null)[]>([]);
+  
+  // Create animated falling leaves effect
+  useEffect(() => {
+    const leaves = leafRefs.current.filter(Boolean) as HTMLDivElement[];
+    leaves.forEach(leaf => {
+      const startX = Math.random() * 100;
+      leaf.style.left = `${startX}%`;
+      leaf.style.animationDelay = `${Math.random() * 10}s`;
+      leaf.style.animationDuration = `${10 + Math.random() * 20}s`;
+    });
+  }, []);
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col relative overflow-hidden">
       <Header />
       
-      <main className="flex-1">
+      {/* Animated Leaves Background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {[...Array(15)].map((_, i) => (
+          <div 
+            key={i}
+            ref={el => leafRefs.current[i] = el}
+            className="absolute falling-leaf"
+          >
+            <Leaf className="text-green-500/10 dark:text-green-500/5" style={{ width: `${20 + Math.random() * 30}px` }} />
+          </div>
+        ))}
+      </div>
+      
+      <main className="flex-1 relative z-10">
         {/* Hero Section */}
-        <section className="pt-32 pb-20 px-4 bg-gradient-to-b from-serenity-50 to-white dark:from-slate-900 dark:to-slate-900">
+        <section className="pt-32 pb-20 px-4 bg-gradient-to-b from-green-50 to-white dark:from-green-950 dark:to-green-900">
           <div className="container max-w-6xl mx-auto text-center">
             <div className="animate-fade-in">
-              <span className="inline-block px-3 py-1 rounded-full bg-serenity-100 text-serenity-800 dark:bg-serenity-900 dark:text-serenity-200 text-sm font-medium mb-4">
-                Mental Health Support Community
+              <span className="inline-block px-3 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-sm font-medium mb-4">
+                Mental Health Community
               </span>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-serenity-700 via-mindful-700 to-calm-700 bg-clip-text text-transparent">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-green-700 via-green-600 to-green-500 bg-clip-text text-transparent">
                 Share, Connect, and Heal Together
               </h1>
               <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto mb-8">
-                Join a supportive community where you can openly discuss mental health, 
+                Join MentConv, a supportive community where you can openly discuss mental health, 
                 share experiences, and find resources in a safe, judgment-free environment.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button 
                   size="lg" 
-                  className="bg-gradient-to-r from-serenity-500 to-mindful-500 hover:from-serenity-600 hover:to-mindful-600 transition-all shadow-md hover:shadow-lg"
+                  className="waitlist-btn shadow-md hover:shadow-lg text-white"
+                  asChild
                 >
-                  Join The Community
+                  <Link to="/waitlist">
+                    Join The Community
+                  </Link>
                 </Button>
                 <Button 
                   variant="outline" 
                   size="lg" 
-                  className="border-serenity-200 text-serenity-700 hover:bg-serenity-50 dark:border-serenity-800 dark:text-serenity-300 dark:hover:bg-slate-800"
+                  className="border-green-200 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-300 dark:hover:bg-green-900/20"
+                  asChild
                 >
-                  Browse Discussions <ChevronRight className="h-4 w-4 ml-1" />
+                  <Link to="/discussions">
+                    Browse Discussions <ChevronRight className="h-4 w-4 ml-1" />
+                  </Link>
                 </Button>
               </div>
             </div>
             
             <div className="mt-16 flex justify-center">
               <div className="relative w-full max-w-5xl h-[300px] md:h-[400px] rounded-2xl overflow-hidden shadow-xl animate-fade-in">
-                <div className="absolute inset-0 bg-gradient-to-tr from-serenity-500/20 to-mindful-500/20 backdrop-blur-sm"></div>
+                <div className="absolute inset-0 bg-gradient-to-tr from-green-500/20 to-green-300/20 backdrop-blur-sm"></div>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center px-6">
                     <h2 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white mb-4">
                       "Finding a community that understands has been life-changing."
                     </h2>
                     <p className="text-slate-700 dark:text-slate-200 italic">
-                      — Sarah, MindTalk member for 2 years
+                      — Sarah, MentConv member for 2 years
                     </p>
                   </div>
                 </div>
@@ -70,10 +103,10 @@ const Index: React.FC = () => {
         </section>
         
         {/* Features Section */}
-        <section className="py-20 px-4 bg-white dark:bg-slate-900">
+        <section className="py-20 px-4 bg-white dark:bg-green-950">
           <div className="container max-w-6xl mx-auto">
             <div className="text-center mb-16 animate-fade-in">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-mindful-700 to-calm-700 bg-clip-text text-transparent">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-green-700 to-green-500 bg-clip-text text-transparent">
                 A Safe Space for Mental Wellness
               </h2>
               <p className="text-lg text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
@@ -83,9 +116,9 @@ const Index: React.FC = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="card-glass rounded-2xl p-6 animate-fade-in" style={{ animationDelay: "100ms" }}>
-                <div className="w-12 h-12 rounded-lg bg-serenity-100 dark:bg-serenity-900/50 flex items-center justify-center mb-4">
-                  <Users className="h-6 w-6 text-serenity-600 dark:text-serenity-400" />
+              <div className="card-glass rounded-2xl p-6 animate-fade-in hover-lift" style={{ animationDelay: "100ms" }}>
+                <div className="w-12 h-12 rounded-lg bg-green-100 dark:bg-green-900/50 flex items-center justify-center mb-4">
+                  <Users className="h-6 w-6 text-green-600 dark:text-green-400" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2 text-slate-800 dark:text-slate-200">
                   Supportive Community
@@ -96,9 +129,9 @@ const Index: React.FC = () => {
                 </p>
               </div>
               
-              <div className="card-glass rounded-2xl p-6 animate-fade-in" style={{ animationDelay: "200ms" }}>
-                <div className="w-12 h-12 rounded-lg bg-mindful-100 dark:bg-mindful-900/50 flex items-center justify-center mb-4">
-                  <Shield className="h-6 w-6 text-mindful-600 dark:text-mindful-400" />
+              <div className="card-glass rounded-2xl p-6 animate-fade-in hover-lift" style={{ animationDelay: "200ms" }}>
+                <div className="w-12 h-12 rounded-lg bg-green-100 dark:bg-green-900/50 flex items-center justify-center mb-4">
+                  <Shield className="h-6 w-6 text-green-600 dark:text-green-400" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2 text-slate-800 dark:text-slate-200">
                   Anonymous Sharing
@@ -109,9 +142,9 @@ const Index: React.FC = () => {
                 </p>
               </div>
               
-              <div className="card-glass rounded-2xl p-6 animate-fade-in" style={{ animationDelay: "300ms" }}>
-                <div className="w-12 h-12 rounded-lg bg-calm-100 dark:bg-calm-900/50 flex items-center justify-center mb-4">
-                  <HeartHandshake className="h-6 w-6 text-calm-600 dark:text-calm-400" />
+              <div className="card-glass rounded-2xl p-6 animate-fade-in hover-lift" style={{ animationDelay: "300ms" }}>
+                <div className="w-12 h-12 rounded-lg bg-green-100 dark:bg-green-900/50 flex items-center justify-center mb-4">
+                  <MessageSquare className="h-6 w-6 text-green-600 dark:text-green-400" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2 text-slate-800 dark:text-slate-200">
                   Expert Guidance
@@ -122,9 +155,9 @@ const Index: React.FC = () => {
                 </p>
               </div>
               
-              <div className="card-glass rounded-2xl p-6 animate-fade-in" style={{ animationDelay: "400ms" }}>
-                <div className="w-12 h-12 rounded-lg bg-wellness-100 dark:bg-wellness-900/50 flex items-center justify-center mb-4">
-                  <Brain className="h-6 w-6 text-wellness-600 dark:text-wellness-400" />
+              <div className="card-glass rounded-2xl p-6 animate-fade-in hover-lift" style={{ animationDelay: "400ms" }}>
+                <div className="w-12 h-12 rounded-lg bg-green-100 dark:bg-green-900/50 flex items-center justify-center mb-4">
+                  <Brain className="h-6 w-6 text-green-600 dark:text-green-400" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2 text-slate-800 dark:text-slate-200">
                   Wellness Activities
@@ -135,9 +168,9 @@ const Index: React.FC = () => {
                 </p>
               </div>
               
-              <div className="card-glass rounded-2xl p-6 animate-fade-in" style={{ animationDelay: "500ms" }}>
-                <div className="w-12 h-12 rounded-lg bg-support-100 dark:bg-support-900/50 flex items-center justify-center mb-4">
-                  <Bot className="h-6 w-6 text-support-600 dark:text-support-400" />
+              <div className="card-glass rounded-2xl p-6 animate-fade-in hover-lift" style={{ animationDelay: "500ms" }}>
+                <div className="w-12 h-12 rounded-lg bg-green-100 dark:bg-green-900/50 flex items-center justify-center mb-4">
+                  <Bot className="h-6 w-6 text-green-600 dark:text-green-400" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2 text-slate-800 dark:text-slate-200">
                   24/7 AI Support
@@ -148,9 +181,9 @@ const Index: React.FC = () => {
                 </p>
               </div>
               
-              <div className="card-glass rounded-2xl p-6 animate-fade-in" style={{ animationDelay: "600ms" }}>
-                <div className="w-12 h-12 rounded-lg bg-healing-100 dark:bg-healing-900/50 flex items-center justify-center mb-4">
-                  <BarChart4 className="h-6 w-6 text-healing-600 dark:text-healing-400" />
+              <div className="card-glass rounded-2xl p-6 animate-fade-in hover-lift" style={{ animationDelay: "600ms" }}>
+                <div className="w-12 h-12 rounded-lg bg-green-100 dark:bg-green-900/50 flex items-center justify-center mb-4">
+                  <BarChart4 className="h-6 w-6 text-green-600 dark:text-green-400" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2 text-slate-800 dark:text-slate-200">
                   Mood Tracking
@@ -165,11 +198,11 @@ const Index: React.FC = () => {
         </section>
         
         {/* CTA Section */}
-        <section className="py-20 px-4 bg-gradient-to-br from-serenity-50 to-mindful-50 dark:from-slate-900 dark:to-slate-800">
+        <section className="py-20 px-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
           <div className="container max-w-5xl mx-auto">
             <div className="card-glass rounded-3xl p-8 md:p-12 animate-fade-in">
               <div className="text-center">
-                <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-serenity-700 to-mindful-700 bg-clip-text text-transparent">
+                <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-green-700 to-green-500 bg-clip-text text-transparent">
                   Begin Your Wellness Journey Today
                 </h2>
                 <p className="text-lg text-slate-600 dark:text-slate-300 max-w-3xl mx-auto mb-8">
@@ -178,9 +211,12 @@ const Index: React.FC = () => {
                 </p>
                 <Button 
                   size="lg" 
-                  className="bg-gradient-to-r from-serenity-500 to-mindful-500 hover:from-serenity-600 hover:to-mindful-600 transition-all shadow-md hover:shadow-lg"
+                  className="waitlist-btn text-white shadow-md hover:shadow-lg"
+                  asChild
                 >
-                  Join MindTalk — It's Free
+                  <Link to="/waitlist">
+                    Join MentConv — It's Free
+                  </Link>
                 </Button>
                 <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
                   No pressure. Browse discussions as a guest before signing up.

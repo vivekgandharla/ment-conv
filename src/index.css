@@ -5,65 +5,65 @@
 
 @layer base {
   :root {
-    --background: 210 50% 98%;
-    --foreground: 224 71% 4%;
+    --background: 120 50% 98%;
+    --foreground: 120 25% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 224 71% 4%;
+    --card-foreground: 120 25% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71% 4%;
+    --popover-foreground: 120 25% 10%;
 
-    --primary: 222 47% 40%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 142 76% 36%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 5% 96%;
-    --secondary-foreground: 222 47% 30%;
+    --secondary: 120 40% 96%;
+    --secondary-foreground: 142 76% 30%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 120 40% 96%;
+    --muted-foreground: 120 25% 40%;
 
-    --accent: 243 75% 59%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 142 76% 36%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222 47% 40%;
+    --border: 120 20% 90%;
+    --input: 120 20% 90%;
+    --ring: 142 76% 36%;
 
     --radius: 1rem;
   }
 
   .dark {
-    --background: 224 71% 4%;
-    --foreground: 210 40% 98%;
+    --background: 120 30% 8%;
+    --foreground: 120 20% 98%;
 
-    --card: 224 71% 6%;
-    --card-foreground: 210 40% 98%;
+    --card: 120 30% 10%;
+    --card-foreground: 120 20% 98%;
 
-    --popover: 224 71% 6%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 120 30% 10%;
+    --popover-foreground: 120 20% 98%;
 
-    --primary: 243 75% 59%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 142 76% 36%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 215 27.9% 16.9%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 120 30% 16%;
+    --secondary-foreground: 120 20% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 120 30% 16%;
+    --muted-foreground: 120 20% 60%;
 
-    --accent: 243 75% 59%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 142 76% 36%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 243 75% 59%;
+    --border: 120 30% 16%;
+    --input: 120 30% 16%;
+    --ring: 142 76% 36%;
   }
 }
 
@@ -83,7 +83,7 @@
   
   /* Card styles */
   .card-glass {
-    @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-white/30 dark:border-slate-800/30 shadow-md;
+    @apply bg-white/80 dark:bg-green-950/80 backdrop-blur-sm border border-white/30 dark:border-green-900/30 shadow-md;
   }
 
   /* Common transitions */
@@ -98,11 +98,76 @@
   
   /* Gradient text */
   .text-gradient {
-    @apply bg-gradient-to-r from-serenity-500 to-mindful-500 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-green-600 to-green-400 bg-clip-text text-transparent;
   }
 
   /* Focus rings */
   .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-serenity-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900;
+    @apply focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-green-900;
   }
+
+  /* Falling leaf animation */
+  .falling-leaf {
+    animation: falling 10s linear infinite;
+  }
+  
+  @keyframes falling {
+    0% {
+      transform: translateY(-100px) rotate(0deg) scale(0.8);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(100vh) rotate(360deg) scale(1);
+      opacity: 0;
+    }
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-gentle {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-gentle {
+  animation: pulse-gentle 3s ease-in-out infinite;
+}
+
+/* Responsive utilities */
+.mobile-container {
+  @apply px-4 sm:px-6 md:px-8 lg:px-12 w-full max-w-7xl mx-auto;
+}
+
+/* Waitlist button effects */
+.waitlist-btn {
+  @apply relative overflow-hidden transition-all duration-500 bg-gradient-to-r from-green-600 to-green-400 hover:from-green-500 hover:to-green-300;
+}
+
+.waitlist-btn::after {
+  @apply absolute inset-0 bg-white opacity-0 transition-opacity duration-300 content-[''];
+}
+
+.waitlist-btn:hover::after {
+  @apply opacity-20;
 }

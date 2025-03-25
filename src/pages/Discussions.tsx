@@ -154,7 +154,7 @@ const Discussions: React.FC = () => {
               </Button>
               
               <Button
-                className="bg-gradient-to-r from-serenity-500 to-mindful-500 hover:from-serenity-600 hover:to-mindful-600 transition-all shadow-md hover:shadow-lg flex items-center gap-1"
+                className="bg-gradient-to-r from-green-600 to-green-400 hover:from-green-500 hover:to-green-300 transition-all shadow-md hover:shadow-lg flex items-center gap-1"
               >
                 <Plus className="h-4 w-4" />
                 <span>New Discussion</span>
@@ -178,8 +178,7 @@ const Discussions: React.FC = () => {
                 <DiscussionCard 
                   key={discussion.id} 
                   discussion={discussion} 
-                  className="animate-fade-in"
-                  style={{ animationDelay: `${index * 100}ms` }}
+                  className={`animate-fade-in delay-${index * 100}`}
                 />
               ))}
             </div>
