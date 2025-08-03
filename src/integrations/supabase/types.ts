@@ -14,7 +14,289 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      categories: {
+        Row: {
+          color: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          color: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      comments: {
+        Row: {
+          anonymous_name: string | null
+          author_id: string | null
+          content: string
+          created_at: string
+          discussion_id: string
+          downvote_count: number | null
+          id: string
+          is_anonymous: boolean | null
+          parent_comment_id: string | null
+          updated_at: string
+          upvote_count: number | null
+        }
+        Insert: {
+          anonymous_name?: string | null
+          author_id?: string | null
+          content: string
+          created_at?: string
+          discussion_id: string
+          downvote_count?: number | null
+          id?: string
+          is_anonymous?: boolean | null
+          parent_comment_id?: string | null
+          updated_at?: string
+          upvote_count?: number | null
+        }
+        Update: {
+          anonymous_name?: string | null
+          author_id?: string | null
+          content?: string
+          created_at?: string
+          discussion_id?: string
+          downvote_count?: number | null
+          id?: string
+          is_anonymous?: boolean | null
+          parent_comment_id?: string | null
+          updated_at?: string
+          upvote_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "comments_discussion_id_fkey"
+            columns: ["discussion_id"]
+            isOneToOne: false
+            referencedRelation: "discussions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_parent_comment_id_fkey"
+            columns: ["parent_comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      discussions: {
+        Row: {
+          anonymous_name: string | null
+          author_id: string | null
+          category_id: string | null
+          comment_count: number | null
+          content: string
+          created_at: string
+          downvote_count: number | null
+          id: string
+          is_anonymous: boolean | null
+          title: string
+          updated_at: string
+          upvote_count: number | null
+          view_count: number | null
+        }
+        Insert: {
+          anonymous_name?: string | null
+          author_id?: string | null
+          category_id?: string | null
+          comment_count?: number | null
+          content: string
+          created_at?: string
+          downvote_count?: number | null
+          id?: string
+          is_anonymous?: boolean | null
+          title: string
+          updated_at?: string
+          upvote_count?: number | null
+          view_count?: number | null
+        }
+        Update: {
+          anonymous_name?: string | null
+          author_id?: string | null
+          category_id?: string | null
+          comment_count?: number | null
+          content?: string
+          created_at?: string
+          downvote_count?: number | null
+          id?: string
+          is_anonymous?: boolean | null
+          title?: string
+          updated_at?: string
+          upvote_count?: number | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discussions_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "discussions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          is_anonymous: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          is_anonymous?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          is_anonymous?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      resources: {
+        Row: {
+          author_id: string | null
+          category_id: string | null
+          created_at: string
+          description: string | null
+          difficulty_level: string | null
+          id: string
+          is_approved: boolean | null
+          rating: number | null
+          rating_count: number | null
+          resource_type: Database["public"]["Enums"]["resource_type"]
+          tags: string[] | null
+          title: string
+          updated_at: string
+          url: string | null
+          view_count: number | null
+        }
+        Insert: {
+          author_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          difficulty_level?: string | null
+          id?: string
+          is_approved?: boolean | null
+          rating?: number | null
+          rating_count?: number | null
+          resource_type: Database["public"]["Enums"]["resource_type"]
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          url?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          author_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          difficulty_level?: string | null
+          id?: string
+          is_approved?: boolean | null
+          rating?: number | null
+          rating_count?: number | null
+          resource_type?: Database["public"]["Enums"]["resource_type"]
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          url?: string | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resources_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "resources_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      votes: {
+        Row: {
+          created_at: string
+          id: string
+          target_id: string
+          target_type: string
+          user_id: string
+          vote_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          target_id: string
+          target_type: string
+          user_id: string
+          vote_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          target_id?: string
+          target_type?: string
+          user_id?: string
+          vote_type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +305,13 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      resource_type:
+        | "article"
+        | "video"
+        | "podcast"
+        | "exercise"
+        | "book"
+        | "link"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +438,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      resource_type: [
+        "article",
+        "video",
+        "podcast",
+        "exercise",
+        "book",
+        "link",
+      ],
+    },
   },
 } as const
