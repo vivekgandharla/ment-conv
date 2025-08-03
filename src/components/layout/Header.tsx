@@ -12,12 +12,16 @@ import {
   UserCircle, 
   Menu, 
   X,
-  TrendingUp 
+  TrendingUp,
+  LogOut,
+  User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/hooks/useAuth";
 
 const Header: React.FC = () => {
+  const { user, signOut } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
@@ -86,26 +90,35 @@ const Header: React.FC = () => {
         <div className="flex items-center gap-3">
           <ThemeToggle />
           
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="hidden md:flex items-center gap-1 hover:bg-green-50 dark:hover:bg-green-900/20"
-            asChild
-          >
-            <Link to="/signin">
-              <UserCircle className="h-4 w-4" />
-              <span>Sign In</span>
-            </Link>
-          </Button>
-          
-          <Button 
-            className="hidden md:flex items-center gap-1 waitlist-btn text-white shadow-md hover:shadow-lg"
-            asChild
-          >
-            <Link to="/waitlist">
-              Get Started
-            </Link>
-          </Button>
+          {/* Auth Section */}
+          {user ? (
+            <div className="hidden md:flex items-center gap-2">
+              <span className="text-sm text-foreground">
+                {user.user_metadata?.display_name || user.email?.split('@')[0]}
+              </span>
+              <Button
+                onClick={signOut}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-1"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign Out
+              </Button>
+            </div>
+          ) : (
+            <div className="hidden md:flex items-center gap-2">
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/auth">
+                  <UserCircle className="h-4 w-4 mr-1" />
+                  Sign In
+                </Link>
+              </Button>
+              <Button className="waitlist-btn text-white shadow-md hover:shadow-lg" asChild>
+                <Link to="/waitlist">Get Started</Link>
+              </Button>
+            </div>
+          )}
           
           {/* Mobile Menu Button */}
           <Button 
@@ -142,17 +155,37 @@ const Header: React.FC = () => {
               </Link>
             ))}
             <div className="border-t border-gray-200 dark:border-green-800 pt-2 mt-2 flex flex-col gap-2">
-              <Button variant="ghost" className="justify-start" asChild>
-                <Link to="/signin">
-                  <UserCircle className="h-4 w-4 mr-1" />
-                  Sign In
-                </Link>
-              </Button>
-              <Button className="waitlist-btn text-white" asChild>
-                <Link to="/waitlist">
-                  Get Started
-                </Link>
-              </Button>
+              {user ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 px-3 py-2">
+                    <User className="h-4 w-4" />
+                    <span className="text-sm">
+                      {user.user_metadata?.display_name || user.email?.split('@')[0]}
+                    </span>
+                  </div>
+                  <Button
+                    onClick={signOut}
+                    variant="outline"
+                    size="sm"
+                    className="w-full flex items-center gap-1"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sign Out
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <Button variant="ghost" className="justify-start" asChild>
+                    <Link to="/auth">
+                      <UserCircle className="h-4 w-4 mr-1" />
+                      Sign In
+                    </Link>
+                  </Button>
+                  <Button className="waitlist-btn text-white" asChild>
+                    <Link to="/waitlist">Get Started</Link>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
