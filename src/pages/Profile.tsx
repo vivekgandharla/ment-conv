@@ -13,6 +13,8 @@ import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { Separator } from '../components/ui/separator';
 import { useToast } from '../hooks/use-toast';
+import Header from '../components/layout/Header';
+import Footer from '../components/layout/Footer';
 import { 
   User, 
   Edit, 
@@ -336,8 +338,11 @@ export default function Profile() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="space-y-6">
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1 pt-20">
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          <div className="space-y-6">
         {/* Profile Header */}
         <Card>
           <CardContent className="pt-6">
@@ -590,7 +595,10 @@ export default function Profile() {
             </CardContent>
           </Card>
         )}
-      </div>
+          </div>
+        </div>
+      </main>
+      <Footer />
     </div>
   );
 } 

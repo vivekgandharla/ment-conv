@@ -10,6 +10,8 @@ import { Badge } from '../components/ui/badge';
 import { Separator } from '../components/ui/separator';
 import { Switch } from '../components/ui/switch';
 import { useToast } from '../hooks/use-toast';
+import Header from '../components/layout/Header';
+import Footer from '../components/layout/Footer';
 import { 
   Shield, 
   CheckCircle, 
@@ -180,8 +182,11 @@ export default function ModeratorApplication() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="space-y-6">
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1 pt-20">
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          <div className="space-y-6">
         {/* Header */}
         <div className="text-center space-y-4">
           <div className="flex justify-center">
@@ -524,7 +529,10 @@ export default function ModeratorApplication() {
             </CardContent>
           </Card>
         )}
-      </div>
+          </div>
+        </div>
+      </main>
+      <Footer />
     </div>
   );
 } 

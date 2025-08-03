@@ -10,6 +10,8 @@ import { Separator } from '../components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { useToast } from '../hooks/use-toast';
+import Header from '../components/layout/Header';
+import Footer from '../components/layout/Footer';
 import { 
   BookOpen, 
   Play, 
@@ -358,22 +360,25 @@ export default function Resources() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-4">
-          <div className="flex justify-center">
-            <div className="w-16 h-16 bg-green-screen-100 rounded-full flex items-center justify-center">
-              <BookOpen className="w-8 h-8 text-green-screen-400" />
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1 pt-20">
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="text-center space-y-4">
+              <div className="flex justify-center">
+                <div className="w-16 h-16 bg-green-screen-100 rounded-full flex items-center justify-center">
+                  <BookOpen className="w-8 h-8 text-green-screen-400" />
+                </div>
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-green-screen-400">Mental Health Resources</h1>
+                <p className="text-muted-foreground max-w-2xl mx-auto">
+                  Discover curated resources to support your mental health journey. From articles and videos to exercises and tools.
+                </p>
+              </div>
             </div>
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-green-screen-400">Mental Health Resources</h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Discover curated resources to support your mental health journey. From articles and videos to exercises and tools.
-            </p>
-          </div>
-        </div>
 
         {/* Filters */}
         <Card>
@@ -613,7 +618,10 @@ export default function Resources() {
             </div>
           </CardContent>
         </Card>
-      </div>
+          </div>
+        </div>
+      </main>
+      <Footer />
     </div>
   );
 }

@@ -9,6 +9,8 @@ import { Label } from '../components/ui/label';
 import { Badge } from '../components/ui/badge';
 import { Separator } from '../components/ui/separator';
 import { useToast } from '../hooks/use-toast';
+import Header from '../components/layout/Header';
+import Footer from '../components/layout/Footer';
 import { 
   Award, 
   CheckCircle, 
@@ -78,7 +80,10 @@ export default function ExpertVerification() {
       if (error && error.code !== 'PGRST116') throw error;
 
       if (data) {
-        setVerification(data);
+        setVerification({
+          ...data,
+          status: data.status as 'pending' | 'approved' | 'rejected'
+        });
         setFormData({
           full_name: data.full_name,
           email: data.email,
@@ -190,8 +195,11 @@ export default function ExpertVerification() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="space-y-6">
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1 pt-20">
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          <div className="space-y-6">
         {/* Header */}
         <div className="text-center space-y-4">
           <div className="flex justify-center">
@@ -484,7 +492,10 @@ export default function ExpertVerification() {
             </CardContent>
           </Card>
         )}
-      </div>
+          </div>
+        </div>
+      </main>
+      <Footer />
     </div>
   );
 } 
