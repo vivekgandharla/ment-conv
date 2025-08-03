@@ -19,6 +19,9 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				sans: ['Noto Sans', 'sans-serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -52,6 +55,14 @@ export default {
 				card: {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
+				},
+				// Green Screen Color Palette from the image
+				'green-screen': {
+					50: '#F4FFFC',   // Very light mint
+					100: '#91EAAF',  // Light mint green
+					200: '#C3E956',  // Bright lime green
+					300: '#4D7111',  // Deep olive green
+					400: '#1F4B2C',  // Dark forest green
 				},
 				// Mental health theme colors with greenish tint
 				serenity: {

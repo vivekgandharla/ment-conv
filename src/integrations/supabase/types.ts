@@ -6,77 +6,179 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export type Database = {
-  // Allows to automatically instanciate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "12.2.12 (cd3cf9e)"
-  }
+export interface Database {
   public: {
     Tables: {
-      categories: {
+      profiles: {
         Row: {
-          color: string
-          created_at: string
-          description: string | null
           id: string
-          name: string
+          user_id: string
+          display_name: string | null
+          bio: string | null
+          avatar_url: string | null
+          email: string | null
+          is_anonymous: boolean
+          created_at: string
+          updated_at: string
         }
         Insert: {
-          color: string
-          created_at?: string
-          description?: string | null
           id?: string
-          name: string
+          user_id: string
+          display_name?: string | null
+          bio?: string | null
+          avatar_url?: string | null
+          email?: string | null
+          is_anonymous?: boolean
+          created_at?: string
+          updated_at?: string
         }
         Update: {
-          color?: string
+          id?: string
+          user_id?: string
+          display_name?: string | null
+          bio?: string | null
+          avatar_url?: string | null
+          email?: string | null
+          is_anonymous?: boolean
           created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      categories: {
+        Row: {
+          id: string
+          name: string
+          color: string
+          description: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          color: string
           description?: string | null
+          created_at?: string
+        }
+        Update: {
           id?: string
           name?: string
+          color?: string
+          description?: string | null
+          created_at?: string
         }
         Relationships: []
       }
-      comments: {
+      discussions: {
         Row: {
-          anonymous_name: string | null
-          author_id: string | null
-          content: string
-          created_at: string
-          discussion_id: string
-          downvote_count: number | null
           id: string
-          is_anonymous: boolean | null
-          parent_comment_id: string | null
+          title: string
+          content: string
+          author_id: string | null
+          category_id: string | null
+          is_anonymous: boolean
+          anonymous_name: string | null
+          view_count: number
+          comment_count: number
+          upvote_count: number
+          downvote_count: number
+          created_at: string
           updated_at: string
-          upvote_count: number | null
         }
         Insert: {
-          anonymous_name?: string | null
-          author_id?: string | null
-          content: string
-          created_at?: string
-          discussion_id: string
-          downvote_count?: number | null
           id?: string
-          is_anonymous?: boolean | null
-          parent_comment_id?: string | null
+          title: string
+          content: string
+          author_id?: string | null
+          category_id?: string | null
+          is_anonymous?: boolean
+          anonymous_name?: string | null
+          view_count?: number
+          comment_count?: number
+          upvote_count?: number
+          downvote_count?: number
+          created_at?: string
           updated_at?: string
-          upvote_count?: number | null
         }
         Update: {
-          anonymous_name?: string | null
-          author_id?: string | null
-          content?: string
-          created_at?: string
-          discussion_id?: string
-          downvote_count?: number | null
           id?: string
-          is_anonymous?: boolean | null
-          parent_comment_id?: string | null
+          title?: string
+          content?: string
+          author_id?: string | null
+          category_id?: string | null
+          is_anonymous?: boolean
+          anonymous_name?: string | null
+          view_count?: number
+          comment_count?: number
+          upvote_count?: number
+          downvote_count?: number
+          created_at?: string
           updated_at?: string
-          upvote_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discussions_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "discussions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      comments: {
+        Row: {
+          id: string
+          discussion_id: string
+          author_id: string | null
+          parent_comment_id: string | null
+          content: string
+          is_anonymous: boolean
+          anonymous_name: string | null
+          upvote_count: number
+          downvote_count: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          discussion_id: string
+          author_id?: string | null
+          parent_comment_id?: string | null
+          content: string
+          is_anonymous?: boolean
+          anonymous_name?: string | null
+          upvote_count?: number
+          downvote_count?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          discussion_id?: string
+          author_id?: string | null
+          parent_comment_id?: string | null
+          content?: string
+          is_anonymous?: boolean
+          anonymous_name?: string | null
+          upvote_count?: number
+          downvote_count?: number
+          created_at?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -99,159 +201,95 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "comments"
             referencedColumns: ["id"]
-          },
+          }
         ]
       }
-      discussions: {
+      votes: {
         Row: {
-          anonymous_name: string | null
-          author_id: string | null
-          category_id: string | null
-          comment_count: number | null
-          content: string
-          created_at: string
-          downvote_count: number | null
           id: string
-          is_anonymous: boolean | null
-          title: string
-          updated_at: string
-          upvote_count: number | null
-          view_count: number | null
+          user_id: string
+          target_id: string
+          target_type: string
+          vote_type: string
+          created_at: string
         }
         Insert: {
-          anonymous_name?: string | null
-          author_id?: string | null
-          category_id?: string | null
-          comment_count?: number | null
-          content: string
-          created_at?: string
-          downvote_count?: number | null
           id?: string
-          is_anonymous?: boolean | null
-          title: string
-          updated_at?: string
-          upvote_count?: number | null
-          view_count?: number | null
+          user_id: string
+          target_id: string
+          target_type: string
+          vote_type: string
+          created_at?: string
         }
         Update: {
-          anonymous_name?: string | null
-          author_id?: string | null
-          category_id?: string | null
-          comment_count?: number | null
-          content?: string
-          created_at?: string
-          downvote_count?: number | null
           id?: string
-          is_anonymous?: boolean | null
-          title?: string
-          updated_at?: string
-          upvote_count?: number | null
-          view_count?: number | null
+          user_id?: string
+          target_id?: string
+          target_type?: string
+          vote_type?: string
+          created_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "discussions_author_id_fkey"
-            columns: ["author_id"]
+            foreignKeyName: "votes_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "discussions_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
+            referencedRelation: "users"
             referencedColumns: ["id"]
-          },
+          }
         ]
-      }
-      profiles: {
-        Row: {
-          avatar_url: string | null
-          bio: string | null
-          created_at: string
-          display_name: string | null
-          email: string | null
-          id: string
-          is_anonymous: boolean | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          avatar_url?: string | null
-          bio?: string | null
-          created_at?: string
-          display_name?: string | null
-          email?: string | null
-          id?: string
-          is_anonymous?: boolean | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          avatar_url?: string | null
-          bio?: string | null
-          created_at?: string
-          display_name?: string | null
-          email?: string | null
-          id?: string
-          is_anonymous?: boolean | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
       }
       resources: {
         Row: {
-          author_id: string | null
-          category_id: string | null
-          created_at: string
-          description: string | null
-          difficulty_level: string | null
           id: string
-          is_approved: boolean | null
-          rating: number | null
-          rating_count: number | null
-          resource_type: Database["public"]["Enums"]["resource_type"]
-          tags: string[] | null
           title: string
-          updated_at: string
+          description: string | null
           url: string | null
-          view_count: number | null
+          resource_type: string
+          category_id: string | null
+          author_id: string | null
+          rating: number | null
+          rating_count: number
+          view_count: number
+          is_approved: boolean
+          tags: string[] | null
+          difficulty_level: string | null
+          created_at: string
+          updated_at: string
         }
         Insert: {
-          author_id?: string | null
-          category_id?: string | null
-          created_at?: string
-          description?: string | null
-          difficulty_level?: string | null
           id?: string
-          is_approved?: boolean | null
-          rating?: number | null
-          rating_count?: number | null
-          resource_type: Database["public"]["Enums"]["resource_type"]
-          tags?: string[] | null
           title: string
-          updated_at?: string
+          description?: string | null
           url?: string | null
-          view_count?: number | null
+          resource_type: string
+          category_id?: string | null
+          author_id?: string | null
+          rating?: number | null
+          rating_count?: number
+          view_count?: number
+          is_approved?: boolean
+          tags?: string[] | null
+          difficulty_level?: string | null
+          created_at?: string
+          updated_at?: string
         }
         Update: {
-          author_id?: string | null
-          category_id?: string | null
-          created_at?: string
-          description?: string | null
-          difficulty_level?: string | null
           id?: string
-          is_approved?: boolean | null
-          rating?: number | null
-          rating_count?: number | null
-          resource_type?: Database["public"]["Enums"]["resource_type"]
-          tags?: string[] | null
           title?: string
-          updated_at?: string
+          description?: string | null
           url?: string | null
-          view_count?: number | null
+          resource_type?: string
+          category_id?: string | null
+          author_id?: string | null
+          rating?: number | null
+          rating_count?: number
+          view_count?: number
+          is_approved?: boolean
+          tags?: string[] | null
+          difficulty_level?: string | null
+          created_at?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -267,35 +305,287 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
-          },
+          }
         ]
       }
-      votes: {
+      waitlist: {
         Row: {
-          created_at: string
           id: string
-          target_id: string
-          target_type: string
-          user_id: string
-          vote_type: string
+          email: string
+          name: string | null
+          phone: string | null
+          interest: string | null
+          source: string | null
+          status: string
+          created_at: string
+          updated_at: string
         }
         Insert: {
-          created_at?: string
           id?: string
-          target_id: string
-          target_type: string
-          user_id: string
-          vote_type: string
+          email: string
+          name?: string | null
+          phone?: string | null
+          interest?: string | null
+          source?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
         }
         Update: {
-          created_at?: string
           id?: string
-          target_id?: string
-          target_type?: string
-          user_id?: string
-          vote_type?: string
+          email?: string
+          name?: string | null
+          phone?: string | null
+          interest?: string | null
+          source?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
         }
         Relationships: []
+      }
+      support_tickets: {
+        Row: {
+          id: string
+          user_id: string | null
+          email: string
+          name: string
+          subject: string
+          message: string
+          category: string
+          priority: string
+          status: string
+          assigned_to: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          email: string
+          name: string
+          subject: string
+          message: string
+          category: string
+          priority?: string
+          status?: string
+          assigned_to?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          email?: string
+          name?: string
+          subject?: string
+          message?: string
+          category?: string
+          priority?: string
+          status?: string
+          assigned_to?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_tickets_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      support_responses: {
+        Row: {
+          id: string
+          ticket_id: string
+          user_id: string | null
+          message: string
+          is_staff_response: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          ticket_id: string
+          user_id?: string | null
+          message: string
+          is_staff_response?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          ticket_id?: string
+          user_id?: string | null
+          message?: string
+          is_staff_response?: boolean
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_responses_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_responses_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      expert_verifications: {
+        Row: {
+          id: string
+          user_id: string
+          full_name: string
+          email: string
+          profession: string
+          credentials: string
+          experience_years: number
+          license_number: string | null
+          organization: string | null
+          website: string | null
+          linkedin_url: string | null
+          status: string
+          reviewed_by: string | null
+          reviewed_at: string | null
+          rejection_reason: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          full_name: string
+          email: string
+          profession: string
+          credentials: string
+          experience_years: number
+          license_number?: string | null
+          organization?: string | null
+          website?: string | null
+          linkedin_url?: string | null
+          status?: string
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          rejection_reason?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          full_name?: string
+          email?: string
+          profession?: string
+          credentials?: string
+          experience_years?: number
+          license_number?: string | null
+          organization?: string | null
+          website?: string | null
+          linkedin_url?: string | null
+          status?: string
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          rejection_reason?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_verifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_verifications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      moderator_applications: {
+        Row: {
+          id: string
+          user_id: string
+          full_name: string
+          email: string
+          experience: string
+          motivation: string
+          availability_hours: number
+          previous_moderation_experience: boolean
+          status: string
+          reviewed_by: string | null
+          reviewed_at: string | null
+          rejection_reason: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          full_name: string
+          email: string
+          experience: string
+          motivation: string
+          availability_hours: number
+          previous_moderation_experience?: boolean
+          status?: string
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          rejection_reason?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          full_name?: string
+          email?: string
+          experience?: string
+          motivation?: string
+          availability_hours?: number
+          previous_moderation_experience?: boolean
+          status?: string
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          rejection_reason?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderator_applications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderator_applications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: {
@@ -305,13 +595,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      resource_type:
-        | "article"
-        | "video"
-        | "podcast"
-        | "exercise"
-        | "book"
-        | "link"
+      resource_type: 'article' | 'video' | 'podcast' | 'exercise' | 'book' | 'link'
     }
     CompositeTypes: {
       [_ in never]: never

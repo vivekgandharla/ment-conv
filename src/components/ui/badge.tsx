@@ -17,12 +17,14 @@ interface BadgeProps {
   variant?: BadgeVariant;
   className?: string;
   children: React.ReactNode;
+  style?: React.CSSProperties;
 }
 
 const Badge: React.FC<BadgeProps> = ({ 
   variant = "default", 
   className, 
-  children 
+  children,
+  style
 }) => {
   const variantClasses = {
     default: "bg-primary text-primary-foreground",
@@ -37,14 +39,17 @@ const Badge: React.FC<BadgeProps> = ({
   };
 
   return (
-    <span className={cn(
-      "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-all hover:scale-105",
-      variantClasses[variant],
-      className
-    )}>
+    <span 
+      className={cn(
+        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-all hover:scale-105",
+        variantClasses[variant],
+        className
+      )}
+      style={style}
+    >
       {children}
     </span>
   );
 };
 
-export default Badge;
+export { Badge };

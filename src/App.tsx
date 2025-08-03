@@ -12,6 +12,9 @@ import Trending from "./pages/Trending";
 import Support from "./pages/Support";
 import Auth from "./pages/Auth";
 import Waitlist from "./pages/Waitlist";
+import Profile from "./pages/Profile";
+import ExpertVerification from "./pages/ExpertVerification";
+import ModeratorApplication from "./pages/ModeratorApplication";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +31,9 @@ const App = () => (
           <Route path="/support" element={<Support />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/waitlist" element={<Waitlist />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/expert-verification" element={<ExpertVerification />} />
+          <Route path="/moderator-application" element={<ModeratorApplication />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

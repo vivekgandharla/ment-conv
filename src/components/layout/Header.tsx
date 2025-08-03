@@ -14,11 +14,22 @@ import {
   X,
   TrendingUp,
   LogOut,
-  User
+  User,
+  Settings,
+  Award,
+  Shield,
+  ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Header: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -47,6 +58,12 @@ const Header: React.FC = () => {
     { name: "Resources", path: "/resources", icon: <BookOpen className="h-4 w-4 mr-1" /> },
     { name: "Trending", path: "/trending", icon: <TrendingUp className="h-4 w-4 mr-1" /> },
     { name: "Support", path: "/support", icon: <Heart className="h-4 w-4 mr-1" /> },
+  ];
+
+  const userMenuItems = [
+    { name: "Profile", path: "/profile", icon: <User className="h-4 w-4" /> },
+    { name: "Expert Verification", path: "/expert-verification", icon: <Award className="h-4 w-4" /> },
+    { name: "Moderator Application", path: "/moderator-application", icon: <Shield className="h-4 w-4" /> },
   ];
 
   return (
@@ -93,18 +110,32 @@ const Header: React.FC = () => {
           {/* Auth Section */}
           {user ? (
             <div className="hidden md:flex items-center gap-2">
-              <span className="text-sm text-foreground">
-                {user.user_metadata?.display_name || user.email?.split('@')[0]}
-              </span>
-              <Button
-                onClick={signOut}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-1"
-              >
-                <LogOut className="h-4 w-4" />
-                Sign Out
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    <span className="text-sm">
+                      {user.user_metadata?.display_name || user.email?.split('@')[0]}
+                    </span>
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {userMenuItems.map((item) => (
+                    <DropdownMenuItem key={item.name} asChild>
+                      <Link to={item.path} className="flex items-center gap-2">
+                        {item.icon}
+                        {item.name}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={signOut} className="flex items-center gap-2">
+                    <LogOut className="h-4 w-4" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           ) : (
             <div className="hidden md:flex items-center gap-2">
@@ -163,6 +194,17 @@ const Header: React.FC = () => {
                       {user.user_metadata?.display_name || user.email?.split('@')[0]}
                     </span>
                   </div>
+                  {userMenuItems.map((item) => (
+                    <Link
+                      key={item.name}
+                      to={item.path}
+                      className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:bg-green-50 dark:text-slate-300 dark:hover:bg-green-900/20 rounded-md"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      {item.icon}
+                      {item.name}
+                    </Link>
+                  ))}
                   <Button
                     onClick={signOut}
                     variant="outline"
