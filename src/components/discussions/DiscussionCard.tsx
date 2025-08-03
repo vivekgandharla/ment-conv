@@ -3,7 +3,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Heart, MessageSquare, Share2, UserCircle, Shield, Clock } from "lucide-react";
-import Badge from "@/components/ui/Badge";
+import Badge from "@/components/ui/badge";
 
 interface Discussion {
   id: string;
