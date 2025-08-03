@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../integrations/supabase/client';
 import { Button } from '../components/ui/button';
@@ -6,15 +7,37 @@ import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
+import { Badge } from '../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { Separator } from '../components/ui/separator';
-import { Badge } from '../components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { useToast } from '../hooks/use-toast';
-import { Camera, Edit, Save, X, Upload, User, Settings, Shield, Heart } from 'lucide-react';
+import { 
+  User, 
+  Edit, 
+  Save, 
+  Camera, 
+  Settings, 
+  Shield, 
+  Award, 
+  MessageSquare, 
+  Heart, 
+  Eye,
+  Calendar,
+  MapPin,
+  Globe,
+  Mail,
+  Phone,
+  BookOpen,
+  TrendingUp,
+  Star,
+  CheckCircle,
+  Clock,
+  XCircle
+} from 'lucide-react';
 
-interface ProfileData {
+interface Profile {
   id: string;
   user_id: string;
   display_name: string | null;
@@ -26,14 +49,38 @@ interface ProfileData {
   updated_at: string;
 }
 
+interface ExpertVerification {
+  id: string;
+  status: 'pending' | 'approved' | 'rejected';
+  profession: string;
+  credentials: string;
+  experience_years: number;
+  organization: string | null;
+  reviewed_at: string | null;
+  rejection_reason: string | null;
+}
+
+interface UserStats {
+  discussions_count: number;
+  comments_count: number;
+  total_upvotes: number;
+  total_views: number;
+  member_since: string;
+}
+
 export default function Profile() {
+  const { userId } = useParams<{ userId?: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [expertVerification, setExpertVerification] = useState<ExpertVerification | null>(null);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [editMode, setEditMode] = useState(false);
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
+
+  // Form states
   const [formData, setFormData] = useState({
     display_name: '',
     bio: '',
@@ -41,17 +88,21 @@ export default function Profile() {
   });
 
   useEffect(() => {
-    if (user) {
-      fetchProfile();
+    const targetUserId = userId || user?.id;
+    if (targetUserId) {
+      fetchProfile(targetUserId);
+      fetchExpertVerification(targetUserId);
+      fetchUserStats(targetUserId);
+      setIsOwnProfile(targetUserId === user?.id);
     }
-  }, [user]);
+  }, [userId, user?.id]);
 
-  const fetchProfile = async () => {
+  const fetchProfile = async (targetUserId: string) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', targetUserId)
         .single();
 
       if (error) throw error;
@@ -66,7 +117,7 @@ export default function Profile() {
       console.error('Error fetching profile:', error);
       toast({
         title: "Error",
-        description: "Failed to load profile data",
+        description: "Failed to load profile",
         variant: "destructive"
       });
     } finally {
@@ -74,10 +125,81 @@ export default function Profile() {
     }
   };
 
-  const handleSave = async () => {
+  const fetchExpertVerification = async (targetUserId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('expert_verifications')
+        .select('*')
+        .eq('user_id', targetUserId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "not found"
+      setExpertVerification(data ? {
+        id: data.id,
+        status: data.status as 'pending' | 'approved' | 'rejected',
+        profession: data.profession,
+        credentials: data.credentials,
+        experience_years: data.experience_years,
+        organization: data.organization,
+        reviewed_at: data.reviewed_at,
+        rejection_reason: data.rejection_reason
+      } : null);
+    } catch (error) {
+      console.error('Error fetching expert verification:', error);
+    }
+  };
+
+  const fetchUserStats = async (targetUserId: string) => {
+    try {
+      // Fetch discussions count
+      const { count: discussionsCount } = await supabase
+        .from('discussions')
+        .select('*', { count: 'exact', head: true })
+        .eq('author_id', targetUserId);
+
+      // Fetch comments count
+      const { count: commentsCount } = await supabase
+        .from('comments')
+        .select('*', { count: 'exact', head: true })
+        .eq('author_id', targetUserId);
+
+      // Fetch total upvotes received
+      const { data: discussions } = await supabase
+        .from('discussions')
+        .select('upvote_count')
+        .eq('author_id', targetUserId);
+
+      const { data: comments } = await supabase
+        .from('comments')
+        .select('upvote_count')
+        .eq('author_id', targetUserId);
+
+      const totalUpvotes = (discussions?.reduce((sum, d) => sum + (d.upvote_count || 0), 0) || 0) +
+                          (comments?.reduce((sum, c) => sum + (c.upvote_count || 0), 0) || 0);
+
+      // Fetch total views
+      const { data: discussionsWithViews } = await supabase
+        .from('discussions')
+        .select('view_count')
+        .eq('author_id', targetUserId);
+
+      const totalViews = discussionsWithViews?.reduce((sum, d) => sum + (d.view_count || 0), 0) || 0;
+
+      setUserStats({
+        discussions_count: discussionsCount || 0,
+        comments_count: commentsCount || 0,
+        total_upvotes: totalUpvotes,
+        total_views: totalViews,
+        member_since: profile?.created_at || new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+    }
+  };
+
+  const handleSaveProfile = async () => {
     if (!user) return;
 
-    setSaving(true);
     try {
       const { error } = await supabase
         .from('profiles')
@@ -90,8 +212,14 @@ export default function Profile() {
 
       if (error) throw error;
 
-      await fetchProfile();
-      setEditMode(false);
+      setProfile(prev => prev ? {
+        ...prev,
+        display_name: formData.display_name,
+        bio: formData.bio,
+        is_anonymous: formData.is_anonymous
+      } : null);
+
+      setEditing(false);
       toast({
         title: "Success",
         description: "Profile updated successfully",
@@ -103,31 +231,32 @@ export default function Profile() {
         description: "Failed to update profile",
         variant: "destructive"
       });
-    } finally {
-      setSaving(false);
     }
   };
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !user) return;
+    if (!user || !event.target.files || event.target.files.length === 0) return;
+
+    const file = event.target.files[0];
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}-${Date.now()}.${fileExt}`;
 
     setUploading(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
 
+    try {
+      // Upload file to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file);
+        .upload(fileName, file);
 
       if (uploadError) throw uploadError;
 
+      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
-        .getPublicUrl(filePath);
+        .getPublicUrl(fileName);
 
+      // Update profile with new avatar URL
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
@@ -135,7 +264,7 @@ export default function Profile() {
 
       if (updateError) throw updateError;
 
-      await fetchProfile();
+      setProfile(prev => prev ? { ...prev, avatar_url: publicUrl } : null);
       toast({
         title: "Success",
         description: "Avatar updated successfully",
@@ -161,25 +290,45 @@ export default function Profile() {
       .slice(0, 2);
   };
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const getVerificationStatusIcon = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'pending':
+        return <Clock className="h-4 w-4 text-yellow-500" />;
+      case 'rejected':
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      default:
+        return null;
+    }
+  };
+
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="animate-pulse space-y-6">
+          <div className="h-32 bg-gray-200 rounded-lg"></div>
+          <div className="h-64 bg-gray-200 rounded-lg"></div>
         </div>
       </div>
     );
   }
 
-  if (!user) {
+  if (!profile) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
         <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">
-              Please log in to view your profile.
-            </p>
+          <CardContent className="pt-6 text-center">
+            <User className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">Profile not found</p>
           </CardContent>
         </Card>
       </div>
@@ -189,274 +338,258 @@ export default function Profile() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-green-screen-400">Profile</h1>
-            <p className="text-muted-foreground">Manage your account and preferences</p>
-          </div>
-          <Button
-            onClick={() => setEditMode(!editMode)}
-            variant={editMode ? "outline" : "default"}
-            className="bg-green-screen-200 hover:bg-green-screen-300 text-green-screen-400"
-          >
-            {editMode ? (
-              <>
-                <X className="w-4 h-4 mr-2" />
-                Cancel
-              </>
-            ) : (
-              <>
-                <Edit className="w-4 h-4 mr-2" />
-                Edit Profile
-              </>
-            )}
-          </Button>
-        </div>
-
-        <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="profile" className="flex items-center gap-2">
-              <User className="w-4 h-4" />
-              Profile
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" />
-              Settings
-            </TabsTrigger>
-            <TabsTrigger value="privacy" className="flex items-center gap-2">
-              <Shield className="w-4 h-4" />
-              Privacy
-            </TabsTrigger>
-            <TabsTrigger value="activity" className="flex items-center gap-2">
-              <Heart className="w-4 h-4" />
-              Activity
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="profile" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Profile Information</CardTitle>
-                <CardDescription>
-                  Update your personal information and profile picture
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Avatar Section */}
-                <div className="flex items-center space-x-6">
-                  <div className="relative">
-                    <Avatar className="w-24 h-24">
-                      <AvatarImage src={profile?.avatar_url || ''} />
-                      <AvatarFallback className="text-lg bg-green-screen-100 text-green-screen-400">
-                        {getInitials(formData.display_name || user.email || 'U')}
-                      </AvatarFallback>
-                    </Avatar>
-                    {editMode && (
-                      <div className="absolute -bottom-2 -right-2">
-                        <Label htmlFor="avatar-upload" className="cursor-pointer">
-                          <div className="w-8 h-8 bg-green-screen-200 rounded-full flex items-center justify-center hover:bg-green-screen-300 transition-colors">
-                            <Camera className="w-4 h-4 text-green-screen-400" />
-                          </div>
-                        </Label>
-                        <Input
-                          id="avatar-upload"
-                          type="file"
-                          accept="image/*"
-                          onChange={handleAvatarUpload}
-                          className="hidden"
-                          disabled={uploading}
-                        />
+        {/* Profile Header */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-start space-x-6">
+              {/* Avatar Section */}
+              <div className="relative">
+                <Avatar className="w-24 h-24">
+                  <AvatarImage src={profile.avatar_url || ''} />
+                  <AvatarFallback className="text-2xl bg-green-screen-100 text-green-screen-400">
+                    {getInitials(profile.display_name || profile.email || 'U')}
+                  </AvatarFallback>
+                </Avatar>
+                {isOwnProfile && (
+                  <div className="absolute -bottom-2 -right-2">
+                    <Label htmlFor="avatar-upload" className="cursor-pointer">
+                      <div className="w-8 h-8 bg-green-screen-200 rounded-full flex items-center justify-center hover:bg-green-screen-300 transition-colors">
+                        <Camera className="h-4 w-4 text-green-screen-400" />
                       </div>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <div className="space-y-2">
-                      <Label htmlFor="display_name">Display Name</Label>
-                      <Input
-                        id="display_name"
-                        value={formData.display_name}
-                        onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
-                        disabled={!editMode}
-                        placeholder="Enter your display name"
-                        className="bg-green-screen-50 border-green-screen-100 focus:border-green-screen-200"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bio Section */}
-                <div className="space-y-2">
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    value={formData.bio}
-                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                    disabled={!editMode}
-                    placeholder="Tell us about yourself..."
-                    rows={4}
-                    className="bg-green-screen-50 border-green-screen-100 focus:border-green-screen-200"
-                  />
-                </div>
-
-                {/* Email Display */}
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input
-                    value={user.email || ''}
-                    disabled
-                    className="bg-gray-50"
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Email cannot be changed from this page
-                  </p>
-                </div>
-
-                {/* Member Since */}
-                <div className="space-y-2">
-                  <Label>Member Since</Label>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(profile?.created_at || '').toLocaleDateString()}
-                  </p>
-                </div>
-
-                {editMode && (
-                  <div className="flex justify-end space-x-2">
-                    <Button
-                      onClick={() => setEditMode(false)}
-                      variant="outline"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={handleSave}
-                      disabled={saving}
-                      className="bg-green-screen-200 hover:bg-green-screen-300 text-green-screen-400"
-                    >
-                      {saving ? (
-                        <>
-                          <div className="w-4 h-4 mr-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="w-4 h-4 mr-2" />
-                          Save Changes
-                        </>
-                      )}
-                    </Button>
+                    </Label>
+                    <input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="hidden"
+                      disabled={uploading}
+                    />
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </div>
 
-          <TabsContent value="settings" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Account Settings</CardTitle>
-                <CardDescription>
-                  Manage your account preferences and settings
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Anonymous Mode</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Post and comment anonymously
+              {/* Profile Info */}
+              <div className="flex-1 space-y-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h1 className="text-2xl font-bold text-green-screen-400">
+                      {profile.display_name || 'Anonymous User'}
+                    </h1>
+                    <p className="text-muted-foreground">
+                      {profile.email}
                     </p>
+                    {profile.is_anonymous && (
+                      <Badge variant="secondary" className="mt-2">
+                        <Shield className="h-3 w-3 mr-1" />
+                        Anonymous Mode
+                      </Badge>
+                    )}
                   </div>
-                  <Switch
-                    checked={formData.is_anonymous}
-                    onCheckedChange={(checked) => setFormData({ ...formData, is_anonymous: checked })}
-                    disabled={!editMode}
-                  />
+                  {isOwnProfile && (
+                    <Button
+                      onClick={() => setEditing(!editing)}
+                      variant="outline"
+                      className="border-green-screen-200 text-green-screen-400 hover:bg-green-screen-50"
+                    >
+                      {editing ? <Save className="h-4 w-4 mr-1" /> : <Edit className="h-4 w-4 mr-1" />}
+                      {editing ? 'Save' : 'Edit'}
+                    </Button>
+                  )}
                 </div>
 
-                <Separator />
-
-                <div className="space-y-2">
-                  <Label>Account Status</Label>
+                {/* Expert Verification Badge */}
+                {expertVerification && expertVerification.status === 'approved' && (
                   <div className="flex items-center space-x-2">
-                    <Badge variant="secondary" className="bg-green-screen-100 text-green-screen-400">
-                      Active
+                    <Badge className="bg-green-screen-200 text-green-screen-400">
+                      <Award className="h-3 w-3 mr-1" />
+                      Verified Expert
                     </Badge>
                     <span className="text-sm text-muted-foreground">
-                      Your account is in good standing
+                      {expertVerification.profession} • {expertVerification.experience_years} years experience
                     </span>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                )}
 
-          <TabsContent value="privacy" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Privacy Settings</CardTitle>
-                <CardDescription>
-                  Control who can see your profile and activity
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Profile Visibility</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Make your profile visible to other users
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
+                {/* Bio */}
+                {editing ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="bio">Bio</Label>
+                    <Textarea
+                      id="bio"
+                      value={formData.bio}
+                      onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                      placeholder="Tell us about yourself..."
+                      rows={3}
+                      className="bg-green-screen-50 border-green-screen-100 focus:border-green-screen-200"
+                    />
                   </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Show Activity</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Display your recent activity on your profile
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Email Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receive email notifications for important updates
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="activity" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>
-                  Your recent discussions, comments, and interactions
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Heart className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                ) : (
                   <p className="text-muted-foreground">
-                    No recent activity to display
+                    {profile.bio || 'No bio available'}
                   </p>
-                  <p className="text-sm text-muted-foreground">
-                    Start participating in discussions to see your activity here
-                  </p>
+                )}
+
+                {/* Member Since */}
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span>Member since {formatDate(profile.created_at)}</span>
                 </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Stats Cards */}
+        {userStats && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="pt-6 text-center">
+                <MessageSquare className="h-6 w-6 mx-auto text-green-screen-400 mb-2" />
+                <div className="text-2xl font-bold text-green-screen-400">{userStats.discussions_count}</div>
+                <div className="text-sm text-muted-foreground">Discussions</div>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+            <Card>
+              <CardContent className="pt-6 text-center">
+                <User className="h-6 w-6 mx-auto text-green-screen-400 mb-2" />
+                <div className="text-2xl font-bold text-green-screen-400">{userStats.comments_count}</div>
+                <div className="text-sm text-muted-foreground">Comments</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6 text-center">
+                <Heart className="h-6 w-6 mx-auto text-green-screen-400 mb-2" />
+                <div className="text-2xl font-bold text-green-screen-400">{userStats.total_upvotes}</div>
+                <div className="text-sm text-muted-foreground">Upvotes</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6 text-center">
+                <Eye className="h-6 w-6 mx-auto text-green-screen-400 mb-2" />
+                <div className="text-2xl font-bold text-green-screen-400">{userStats.total_views}</div>
+                <div className="text-sm text-muted-foreground">Views</div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Expert Verification Status */}
+        {expertVerification && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-screen-400">
+                <Award className="h-5 w-5" />
+                Expert Verification Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  {getVerificationStatusIcon(expertVerification.status)}
+                  <span className="font-medium capitalize">{expertVerification.status}</span>
+                </div>
+                <Badge 
+                  variant={expertVerification.status === 'approved' ? 'default' : 'secondary'}
+                  className={expertVerification.status === 'approved' ? 'bg-green-screen-200 text-green-screen-400' : ''}
+                >
+                  {expertVerification.profession}
+                </Badge>
+              </div>
+              {expertVerification.status === 'rejected' && expertVerification.rejection_reason && (
+                <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    <strong>Reason:</strong> {expertVerification.rejection_reason}
+                  </p>
+                </div>
+              )}
+              {expertVerification.status === 'pending' && (
+                <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                  <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                    Your application is under review. This usually takes 2-3 business days.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Settings (Only for own profile) */}
+        {isOwnProfile && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-screen-400">
+                <Settings className="h-5 w-5" />
+                Profile Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {editing ? (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="display-name">Display Name</Label>
+                    <Input
+                      id="display-name"
+                      value={formData.display_name}
+                      onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
+                      placeholder="Enter your display name"
+                      className="bg-green-screen-50 border-green-screen-100 focus:border-green-screen-200"
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="anonymous"
+                      checked={formData.is_anonymous}
+                      onCheckedChange={(checked) => setFormData({ ...formData, is_anonymous: checked })}
+                    />
+                    <Label htmlFor="anonymous">Enable anonymous mode</Label>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button onClick={handleSaveProfile} className="bg-green-screen-200 hover:bg-green-screen-300 text-green-screen-400">
+                      Save Changes
+                    </Button>
+                    <Button variant="outline" onClick={() => setEditing(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Display Name</p>
+                    <p className="text-sm text-muted-foreground">{profile.display_name || 'Not set'}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium">Anonymous Mode</p>
+                    <p className="text-sm text-muted-foreground">{profile.is_anonymous ? 'Enabled' : 'Disabled'}</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Expert Verification Application (Only for own profile) */}
+        {isOwnProfile && !expertVerification && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center space-y-4">
+                <Award className="h-12 w-12 mx-auto text-green-screen-400" />
+                <div>
+                  <h3 className="text-lg font-semibold text-green-screen-400">Become a Verified Expert</h3>
+                  <p className="text-muted-foreground">
+                    Get verified as a mental health professional and help others with your expertise.
+                  </p>
+                </div>
+                <Button asChild className="bg-green-screen-200 hover:bg-green-screen-300 text-green-screen-400">
+                  <Link to="/expert-verification">
+                    Apply for Verification
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

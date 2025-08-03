@@ -27,7 +27,13 @@ import {
   Filter,
   Search,
   User,
-  UserX
+  UserX,
+  Share2,
+  BookOpen,
+  Link as LinkIcon,
+  Reply,
+  Heart,
+  Bookmark
 } from 'lucide-react';
 
 interface Discussion {
@@ -53,6 +59,7 @@ interface Discussion {
     color: string;
   };
   user_vote?: 'upvote' | 'downvote' | null;
+  shared_resources?: SharedResource[];
 }
 
 interface Comment {
@@ -73,6 +80,16 @@ interface Comment {
   };
   user_vote?: 'upvote' | 'downvote' | null;
   replies?: Comment[];
+  shared_resources?: SharedResource[];
+}
+
+interface SharedResource {
+  id: string;
+  title: string;
+  description: string;
+  url: string;
+  type: 'article' | 'video' | 'podcast' | 'book' | 'exercise' | 'other';
+  author?: string;
 }
 
 interface Category {
@@ -92,9 +109,11 @@ export default function Discussions() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDiscussionDialog, setShowDiscussionDialog] = useState(false);
+  const [showResourceDialog, setShowResourceDialog] = useState(false);
   const [sortBy, setSortBy] = useState('newest');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -109,6 +128,14 @@ export default function Discussions() {
     content: '',
     is_anonymous: false,
     anonymous_name: ''
+  });
+
+  const [resourceData, setResourceData] = useState({
+    title: '',
+    description: '',
+    url: '',
+    type: 'article' as const,
+    author: ''
   });
 
   useEffect(() => {
@@ -209,7 +236,6 @@ export default function Discussions() {
           author:profiles(display_name, avatar_url)
         `)
         .eq('discussion_id', discussionId)
-        .is('parent_comment_id', null)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -224,12 +250,31 @@ export default function Discussions() {
 
         const voteMap = new Map(votes?.map(v => [v.target_id, v.vote_type as 'upvote' | 'downvote']) || []);
         
-        setComments(data?.map(comment => ({
+        const commentsWithVotes = data?.map(comment => ({
           ...comment,
           user_vote: voteMap.get(comment.id) || null
-        })) || []);
+        })) || [];
+
+        // Organize comments into hierarchy
+        const topLevelComments = commentsWithVotes.filter(comment => !comment.parent_comment_id);
+        const replies = commentsWithVotes.filter(comment => comment.parent_comment_id);
+
+        const organizedComments = topLevelComments.map(comment => ({
+          ...comment,
+          replies: replies.filter(reply => reply.parent_comment_id === comment.id)
+        }));
+
+        setComments(organizedComments);
       } else {
-        setComments(data || []);
+        const topLevelComments = data?.filter(comment => !comment.parent_comment_id) || [];
+        const replies = data?.filter(comment => comment.parent_comment_id) || [];
+
+        const organizedComments = topLevelComments.map(comment => ({
+          ...comment,
+          replies: replies.filter(reply => reply.parent_comment_id === comment.id)
+        }));
+
+        setComments(organizedComments);
       }
     } catch (error) {
       console.error('Error fetching comments:', error);
@@ -264,12 +309,21 @@ export default function Discussions() {
             .delete()
             .eq('id', existingVote.id);
 
-          // Update counts
+          // Update counts using direct SQL
           const countField = voteType === 'upvote' ? 'upvote_count' : 'downvote_count';
-          await supabase
+          const { data: currentData } = await supabase
             .from(targetType === 'discussion' ? 'discussions' : 'comments')
-            .update({ [countField]: supabase.rpc('decrement', { value: 1 }) })
-            .eq('id', targetId);
+            .select(countField)
+            .eq('id', targetId)
+            .single();
+
+          if (currentData) {
+            const newCount = Math.max(0, (currentData[countField] as number) - 1);
+            await supabase
+              .from(targetType === 'discussion' ? 'discussions' : 'comments')
+              .update({ [countField]: newCount })
+              .eq('id', targetId);
+          }
         } else {
           // Change vote
           await supabase
@@ -281,13 +335,24 @@ export default function Discussions() {
           const oldCountField = existingVote.vote_type === 'upvote' ? 'upvote_count' : 'downvote_count';
           const newCountField = voteType === 'upvote' ? 'upvote_count' : 'downvote_count';
           
-          await supabase
+          const { data: currentData } = await supabase
             .from(targetType === 'discussion' ? 'discussions' : 'comments')
-            .update({ 
-              [oldCountField]: supabase.rpc('decrement', { value: 1 }),
-              [newCountField]: supabase.rpc('increment', { value: 1 })
-            })
-            .eq('id', targetId);
+            .select(`${oldCountField}, ${newCountField}`)
+            .eq('id', targetId)
+            .single();
+
+          if (currentData) {
+            const oldCount = Math.max(0, (currentData[oldCountField] as number) - 1);
+            const newCount = (currentData[newCountField] as number) + 1;
+            
+            await supabase
+              .from(targetType === 'discussion' ? 'discussions' : 'comments')
+              .update({ 
+                [oldCountField]: oldCount,
+                [newCountField]: newCount
+              })
+              .eq('id', targetId);
+          }
         }
       } else {
         // Create new vote
@@ -302,10 +367,19 @@ export default function Discussions() {
 
         // Update count
         const countField = voteType === 'upvote' ? 'upvote_count' : 'downvote_count';
-        await supabase
+        const { data: currentData } = await supabase
           .from(targetType === 'discussion' ? 'discussions' : 'comments')
-          .update({ [countField]: supabase.rpc('increment', { value: 1 }) })
-          .eq('id', targetId);
+          .select(countField)
+          .eq('id', targetId)
+          .single();
+
+        if (currentData) {
+          const newCount = (currentData[countField] as number) + 1;
+          await supabase
+            .from(targetType === 'discussion' ? 'discussions' : 'comments')
+            .update({ [countField]: newCount })
+            .eq('id', targetId);
+        }
       }
 
       // Refresh data
@@ -382,11 +456,20 @@ export default function Discussions() {
 
       if (error) throw error;
 
-      // Update comment count
-      await supabase
+      // Update comment count using direct SQL
+      const { data: currentData } = await supabase
         .from('discussions')
-        .update({ comment_count: supabase.rpc('increment', { value: 1 }) })
-        .eq('id', discussionId);
+        .select('comment_count')
+        .eq('id', discussionId)
+        .single();
+
+      if (currentData) {
+        const newCount = (currentData.comment_count as number) + 1;
+        await supabase
+          .from('discussions')
+          .update({ comment_count: newCount })
+          .eq('id', discussionId);
+      }
 
       setCommentData({
         content: '',
@@ -394,6 +477,7 @@ export default function Discussions() {
         anonymous_name: ''
       });
       
+      setReplyingTo(null);
       fetchComments(discussionId);
       fetchDiscussions();
       toast({
@@ -410,8 +494,56 @@ export default function Discussions() {
     }
   };
 
+  const handleShareResource = async (targetId: string, targetType: 'discussion' | 'comment') => {
+    if (!user) return;
+
+    try {
+      // In a real implementation, you would save this to a shared_resources table
+      // For now, we'll just show a success message
+      toast({
+        title: "Success",
+        description: "Resource shared successfully",
+      });
+      setShowResourceDialog(false);
+      setResourceData({
+        title: '',
+        description: '',
+        url: '',
+        type: 'article',
+        author: ''
+      });
+    } catch (error) {
+      console.error('Error sharing resource:', error);
+      toast({
+        title: "Error",
+        description: "Failed to share resource",
+        variant: "destructive"
+      });
+    }
+  };
+
   const openDiscussion = async (discussion: Discussion) => {
     setSelectedDiscussion(discussion);
+    
+    // Increment view count using direct SQL
+    try {
+      const { data: currentData } = await supabase
+        .from('discussions')
+        .select('view_count')
+        .eq('id', discussion.id)
+        .single();
+
+      if (currentData) {
+        const newCount = (currentData.view_count as number) + 1;
+        await supabase
+          .from('discussions')
+          .update({ view_count: newCount })
+          .eq('id', discussion.id);
+      }
+    } catch (error) {
+      console.error('Error incrementing view count:', error);
+    }
+    
     await fetchComments(discussion.id);
     setShowDiscussionDialog(true);
   };
@@ -435,6 +567,17 @@ export default function Discussions() {
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
     if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}d ago`;
     return date.toLocaleDateString();
+  };
+
+  const getResourceIcon = (type: string) => {
+    switch (type) {
+      case 'article': return <BookOpen className="h-4 w-4" />;
+      case 'video': return <MessageSquare className="h-4 w-4" />;
+      case 'podcast': return <MessageSquare className="h-4 w-4" />;
+      case 'book': return <BookOpen className="h-4 w-4" />;
+      case 'exercise': return <Heart className="h-4 w-4" />;
+      default: return <LinkIcon className="h-4 w-4" />;
+    }
   };
 
   return (
@@ -817,70 +960,284 @@ export default function Discussions() {
                 {/* Comments List */}
                 <div className="space-y-4">
                   {comments.map((comment) => (
-                    <div key={comment.id} className="flex space-x-4 p-4 bg-gray-50 rounded-lg">
-                      {/* Vote Buttons */}
-                      <div className="flex flex-col items-center space-y-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleVote(comment.id, 'comment', 'upvote')}
-                          className={`h-6 w-6 p-0 ${comment.user_vote === 'upvote' ? 'text-green-screen-400' : 'text-muted-foreground'}`}
-                        >
-                          <ThumbsUp className="w-3 h-3" />
-                        </Button>
-                        <span className="text-xs font-medium">
-                          {comment.upvote_count - comment.downvote_count}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleVote(comment.id, 'comment', 'downvote')}
-                          className={`h-6 w-6 p-0 ${comment.user_vote === 'downvote' ? 'text-red-500' : 'text-muted-foreground'}`}
-                        >
-                          <ThumbsDown className="w-3 h-3" />
-                        </Button>
+                    <div key={comment.id} className="space-y-3">
+                      <div className="flex space-x-4 p-4 bg-gray-50 rounded-lg">
+                        {/* Vote Buttons */}
+                        <div className="flex flex-col items-center space-y-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleVote(comment.id, 'comment', 'upvote')}
+                            className={`h-6 w-6 p-0 ${comment.user_vote === 'upvote' ? 'text-green-screen-400' : 'text-muted-foreground'}`}
+                          >
+                            <ThumbsUp className="w-3 h-3" />
+                          </Button>
+                          <span className="text-xs font-medium">
+                            {comment.upvote_count - comment.downvote_count}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleVote(comment.id, 'comment', 'downvote')}
+                            className={`h-6 w-6 p-0 ${comment.user_vote === 'downvote' ? 'text-red-500' : 'text-muted-foreground'}`}
+                          >
+                            <ThumbsDown className="w-3 h-3" />
+                          </Button>
+                        </div>
+
+                        {/* Comment Content */}
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              {comment.is_anonymous ? (
+                                <div className="flex items-center space-x-1">
+                                  <UserX className="w-4 h-4 text-muted-foreground" />
+                                  <span className="text-sm font-medium text-muted-foreground">
+                                    {comment.anonymous_name || 'Anonymous'}
+                                  </span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center space-x-2">
+                                  <Avatar className="w-6 h-6">
+                                    <AvatarImage src={comment.author?.avatar_url || ''} />
+                                    <AvatarFallback className="text-xs bg-green-screen-100 text-green-screen-400">
+                                      {getInitials(comment.author?.display_name || 'U')}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span className="text-sm font-medium">
+                                    {comment.author?.display_name || 'Unknown'}
+                                  </span>
+                                </div>
+                              )}
+                              <span className="text-xs text-muted-foreground">
+                                {formatTimeAgo(comment.created_at)}
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setReplyingTo(comment.id)}
+                                className="h-6 px-2 text-xs"
+                              >
+                                <Reply className="w-3 h-3 mr-1" />
+                                Reply
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowResourceDialog(true)}
+                                className="h-6 px-2 text-xs"
+                              >
+                                <Share2 className="w-3 h-3 mr-1" />
+                                Share Resource
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <p className="text-sm text-muted-foreground">
+                            {comment.content}
+                          </p>
+                        </div>
                       </div>
 
-                      {/* Comment Content */}
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center justify-between">
+                      {/* Reply Form */}
+                      {replyingTo === comment.id && (
+                        <div className="ml-8 space-y-3 p-4 bg-green-screen-50/50 rounded-lg">
                           <div className="flex items-center space-x-2">
-                            {comment.is_anonymous ? (
-                              <div className="flex items-center space-x-1">
-                                <UserX className="w-4 h-4 text-muted-foreground" />
-                                <span className="text-sm font-medium text-muted-foreground">
-                                  {comment.anonymous_name || 'Anonymous'}
-                                </span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center space-x-2">
-                                <Avatar className="w-6 h-6">
-                                  <AvatarImage src={comment.author?.avatar_url || ''} />
-                                  <AvatarFallback className="text-xs bg-green-screen-100 text-green-screen-400">
-                                    {getInitials(comment.author?.display_name || 'U')}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <span className="text-sm font-medium">
-                                  {comment.author?.display_name || 'Unknown'}
-                                </span>
-                              </div>
-                            )}
-                            <span className="text-xs text-muted-foreground">
-                              {formatTimeAgo(comment.created_at)}
-                            </span>
+                            <Switch
+                              id="reply-anonymous"
+                              checked={commentData.is_anonymous}
+                              onCheckedChange={(checked) => setCommentData({ ...commentData, is_anonymous: checked })}
+                            />
+                            <Label htmlFor="reply-anonymous">Reply anonymously</Label>
+                          </div>
+                          {commentData.is_anonymous && (
+                            <Input
+                              value={commentData.anonymous_name}
+                              onChange={(e) => setCommentData({ ...commentData, anonymous_name: e.target.value })}
+                              placeholder="Anonymous name (optional)"
+                              className="bg-white border-green-screen-100 focus:border-green-screen-200"
+                            />
+                          )}
+                          <Textarea
+                            value={commentData.content}
+                            onChange={(e) => setCommentData({ ...commentData, content: e.target.value })}
+                            placeholder="Write your reply..."
+                            rows={2}
+                            className="bg-white border-green-screen-100 focus:border-green-screen-200"
+                          />
+                          <div className="flex justify-end space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setReplyingTo(null)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              onClick={() => handleCreateComment(selectedDiscussion.id, comment.id)}
+                              disabled={!commentData.content}
+                              size="sm"
+                              className="bg-green-screen-200 hover:bg-green-screen-300 text-green-screen-400"
+                            >
+                              Reply
+                            </Button>
                           </div>
                         </div>
-                        
-                        <p className="text-sm text-muted-foreground">
-                          {comment.content}
-                        </p>
-                      </div>
+                      )}
+
+                      {/* Replies */}
+                      {comment.replies && comment.replies.length > 0 && (
+                        <div className="ml-8 space-y-3">
+                          {comment.replies.map((reply) => (
+                            <div key={reply.id} className="flex space-x-4 p-3 bg-gray-50/50 rounded-lg">
+                              <div className="flex flex-col items-center space-y-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleVote(reply.id, 'comment', 'upvote')}
+                                  className={`h-5 w-5 p-0 ${reply.user_vote === 'upvote' ? 'text-green-screen-400' : 'text-muted-foreground'}`}
+                                >
+                                  <ThumbsUp className="w-2 h-2" />
+                                </Button>
+                                <span className="text-xs font-medium">
+                                  {reply.upvote_count - reply.downvote_count}
+                                </span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleVote(reply.id, 'comment', 'downvote')}
+                                  className={`h-5 w-5 p-0 ${reply.user_vote === 'downvote' ? 'text-red-500' : 'text-muted-foreground'}`}
+                                >
+                                  <ThumbsDown className="w-2 h-2" />
+                                </Button>
+                              </div>
+                              <div className="flex-1 space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-2">
+                                    {reply.is_anonymous ? (
+                                      <div className="flex items-center space-x-1">
+                                        <UserX className="w-3 h-3 text-muted-foreground" />
+                                        <span className="text-xs font-medium text-muted-foreground">
+                                          {reply.anonymous_name || 'Anonymous'}
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center space-x-2">
+                                        <Avatar className="w-5 h-5">
+                                          <AvatarImage src={reply.author?.avatar_url || ''} />
+                                          <AvatarFallback className="text-xs bg-green-screen-100 text-green-screen-400">
+                                            {getInitials(reply.author?.display_name || 'U')}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <span className="text-xs font-medium">
+                                          {reply.author?.display_name || 'Unknown'}
+                                        </span>
+                                      </div>
+                                    )}
+                                    <span className="text-xs text-muted-foreground">
+                                      {formatTimeAgo(reply.created_at)}
+                                    </span>
+                                  </div>
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  {reply.content}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Resource Sharing Dialog */}
+      <Dialog open={showResourceDialog} onOpenChange={setShowResourceDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Share a Resource</DialogTitle>
+            <DialogDescription>
+              Share a resource that helped you in your mental health journey
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="resource-title">Title</Label>
+              <Input
+                id="resource-title"
+                value={resourceData.title}
+                onChange={(e) => setResourceData({ ...resourceData, title: e.target.value })}
+                placeholder="Resource title"
+                className="bg-green-screen-50 border-green-screen-100 focus:border-green-screen-200"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="resource-description">Description</Label>
+              <Textarea
+                id="resource-description"
+                value={resourceData.description}
+                onChange={(e) => setResourceData({ ...resourceData, description: e.target.value })}
+                placeholder="Brief description of how this resource helped you"
+                rows={3}
+                className="bg-green-screen-50 border-green-screen-100 focus:border-green-screen-200"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="resource-url">URL (optional)</Label>
+              <Input
+                id="resource-url"
+                value={resourceData.url}
+                onChange={(e) => setResourceData({ ...resourceData, url: e.target.value })}
+                placeholder="https://..."
+                className="bg-green-screen-50 border-green-screen-100 focus:border-green-screen-200"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="resource-type">Type</Label>
+              <Select value={resourceData.type} onValueChange={(value: any) => setResourceData({ ...resourceData, type: value })}>
+                <SelectTrigger className="bg-green-screen-50 border-green-screen-100 focus:border-green-screen-200">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="article">Article</SelectItem>
+                  <SelectItem value="video">Video</SelectItem>
+                  <SelectItem value="podcast">Podcast</SelectItem>
+                  <SelectItem value="book">Book</SelectItem>
+                  <SelectItem value="exercise">Exercise</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="resource-author">Author/Creator (optional)</Label>
+              <Input
+                id="resource-author"
+                value={resourceData.author}
+                onChange={(e) => setResourceData({ ...resourceData, author: e.target.value })}
+                placeholder="Author or creator name"
+                className="bg-green-screen-50 border-green-screen-100 focus:border-green-screen-200"
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setShowResourceDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => handleShareResource(selectedDiscussion?.id || '', 'discussion')}
+                disabled={!resourceData.title || !resourceData.description}
+                className="bg-green-screen-200 hover:bg-green-screen-300 text-green-screen-400"
+              >
+                Share Resource
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

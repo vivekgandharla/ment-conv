@@ -208,4 +208,18 @@ SECURITY DEFINER
 SET search_path = ''
 AS $$
   SELECT -value;
+$$;
+
+-- Create function to increment view count
+CREATE OR REPLACE FUNCTION public.increment_view_count(discussion_id UUID)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  UPDATE public.discussions 
+  SET view_count = view_count + 1 
+  WHERE id = discussion_id;
+END;
 $$; 

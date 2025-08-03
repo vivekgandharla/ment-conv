@@ -1,240 +1,364 @@
 
-import React from "react";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, MessageSquare, Heart, BarChart, Eye, Clock } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  TrendingUp, 
+  MessageSquare, 
+  Heart, 
+  BarChart, 
+  Eye, 
+  Clock, 
+  ChevronRight,
+  Users,
+  BookOpen,
+  Award
+} from "lucide-react";
 
-// Mock data
-const trendingTopics = [
-  { id: 1, name: "Anxiety Management", count: 324, category: "Anxiety", variant: "serenity" as const },
-  { id: 2, name: "Mindfulness Practices", count: 287, category: "Self-Care", variant: "calm" as const },
-  { id: 3, name: "Depression Support", count: 253, category: "Depression", variant: "mindful" as const },
-  { id: 4, name: "Work-Life Balance", count: 189, category: "Stress", variant: "wellness" as const },
-  { id: 5, name: "Healthy Relationships", count: 142, category: "Relationships", variant: "support" as const },
-];
+interface TrendingDiscussion {
+  id: string;
+  title: string;
+  content: string;
+  view_count: number;
+  comment_count: number;
+  upvote_count: number;
+  downvote_count: number;
+  created_at: string;
+  author?: {
+    display_name: string | null;
+    avatar_url: string | null;
+  };
+  category?: {
+    name: string;
+    color: string;
+  };
+}
 
-const trendingDiscussions = [
-  {
-    id: 1,
-    title: "How I overcame social anxiety through gradual exposure",
-    excerpt: "After years of avoiding social situations, I started a journey of gradual exposure that changed my life. Here's my story and the techniques that worked for me...",
-    author: "RecoveringIntrovert",
-    postedAt: "2 days ago",
-    views: 2856,
-    comments: 134,
-    likes: 348,
-    category: "Anxiety",
-    variant: "serenity" as const
-  },
-  {
-    id: 2,
-    title: "Daily mindfulness practices that take less than 5 minutes",
-    excerpt: "We all have busy lives, but even a few minutes of mindfulness can make a huge difference. These are the quick practices I incorporate throughout my day...",
-    author: "MindfulMoments",
-    postedAt: "3 days ago",
-    views: 2413,
-    comments: 92,
-    likes: 273,
-    category: "Self-Care",
-    variant: "calm" as const
-  },
-  {
-    id: 3,
-    title: "Supporting a partner with depression: what I've learned",
-    excerpt: "When my partner was diagnosed with depression, I had no idea how to help. Over the years, I've learned some important lessons about support, boundaries, and self-care...",
-    author: "SupportiveSpouse",
-    postedAt: "1 week ago",
-    views: 1987,
-    comments: 156,
-    likes: 412,
-    category: "Depression",
-    variant: "mindful" as const
-  },
-  {
-    id: 4,
-    title: "How I restructured my work life to prioritize mental health",
-    excerpt: "After burning out twice, I realized I needed to completely rethink my approach to work. Here's how I created boundaries and rebuilt my career with mental health as a priority...",
-    author: "BalancedProfessional",
-    postedAt: "5 days ago",
-    views: 1754,
-    comments: 87,
-    likes: 231,
-    category: "Stress",
-    variant: "wellness" as const
-  },
-];
+interface TrendingTopic {
+  name: string;
+  count: number;
+  category: string;
+}
 
-const Trending: React.FC = () => {
-  return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
+export default function Trending() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [trendingDiscussions, setTrendingDiscussions] = useState<TrendingDiscussion[]>([]);
+  const [trendingTopics, setTrendingTopics] = useState<TrendingTopic[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchTrendingData();
+  }, []);
+
+  const fetchTrendingData = async () => {
+    setLoading(true);
+    try {
+      // Fetch trending discussions (most viewed, commented, and upvoted)
+      const { data: discussions, error: discussionsError } = await supabase
+        .from('discussions')
+        .select(`
+          *,
+          author:profiles(display_name, avatar_url),
+          category:categories(name, color)
+        `)
+        .order('view_count', { ascending: false })
+        .order('comment_count', { ascending: false })
+        .order('upvote_count', { ascending: false })
+        .limit(4);
+
+      if (discussionsError) throw discussionsError;
+
+      // Fetch trending topics (categories with most discussions)
+      const { data: topics, error: topicsError } = await supabase
+        .from('categories')
+        .select(`
+          name,
+          color,
+          discussions!inner(id)
+        `)
+        .order('discussions.count', { ascending: false })
+        .limit(10);
+
+      if (topicsError) throw topicsError;
+
+      setTrendingDiscussions(discussions || []);
       
-      <main className="flex-1 pt-28 pb-16 px-4">
-        <div className="container max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 animate-fade-in">
+      // Transform topics data
+      const transformedTopics = topics?.map(topic => ({
+        name: topic.name,
+        count: topic.discussions?.length || 0,
+        category: topic.name
+      })) || [];
+
+      setTrendingTopics(transformedTopics);
+    } catch (error) {
+      console.error('Error fetching trending data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load trending data",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return 'just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    return date.toLocaleDateString();
+  };
+
+  const formatNumber = (num: number) => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+    return num.toString();
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        {/* Main Content */}
+        <div className="lg:col-span-3">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
-                <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-200">
-                  Trending Now
-                </h1>
-              </div>
-              <p className="text-slate-600 dark:text-slate-400">
+              <h1 className="text-3xl font-bold text-green-screen-400 flex items-center gap-2">
+                <TrendingUp className="h-8 w-8" />
+                Trending Now
+              </h1>
+              <p className="text-muted-foreground mt-2">
                 Discover what's popular in the MentConv community
               </p>
             </div>
+            <Button asChild className="bg-green-screen-200 hover:bg-green-screen-300 text-green-screen-400">
+              <Link to="/discussions">
+                View All Discussions
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Link>
+            </Button>
+          </div>
+
+          {/* Trending Discussions */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold text-green-screen-400">Trending Discussions</h2>
             
-            <div className="mt-4 md:mt-0">
-              <Button 
-                variant="outline" 
-                className="border-green-300 text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-300 dark:hover:bg-green-900/20"
-                asChild
-              >
+            {loading ? (
+              <div className="space-y-4">
+                {[...Array(4)].map((_, i) => (
+                  <Card key={i} className="animate-pulse">
+                    <CardContent className="pt-6">
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : trendingDiscussions.length === 0 ? (
+              <Card>
+                <CardContent className="pt-6 text-center">
+                  <TrendingUp className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">No trending discussions yet</p>
+                  <p className="text-sm text-muted-foreground">
+                    Start a discussion to see it here!
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {trendingDiscussions.map((discussion, index) => (
+                  <Card key={discussion.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                    <CardContent className="pt-6">
+                      <div className="flex items-start space-x-4">
+                        {/* Discussion Content */}
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center space-x-2">
+                            {discussion.category && (
+                              <Badge 
+                                className="text-white"
+                                style={{ backgroundColor: discussion.category.color }}
+                              >
+                                {discussion.category.name}
+                              </Badge>
+                            )}
+                            <span className="text-sm text-muted-foreground">
+                              {formatTimeAgo(discussion.created_at)}
+                            </span>
+                          </div>
+                          
+                          <h3 className="text-lg font-semibold text-green-screen-400 hover:text-green-screen-300">
+                            {discussion.title}
+                          </h3>
+                          
+                          <p className="text-muted-foreground line-clamp-2">
+                            {discussion.content}
+                          </p>
+
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                              <div className="flex items-center space-x-1">
+                                <Eye className="w-4 h-4" />
+                                <span>{formatNumber(discussion.view_count)} views</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <MessageSquare className="w-4 h-4" />
+                                <span>{formatNumber(discussion.comment_count)} comments</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <Heart className="w-4 h-4" />
+                                <span>{formatNumber(discussion.upvote_count)} likes</span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                              <Avatar className="w-6 h-6">
+                                <AvatarImage src={discussion.author?.avatar_url || ''} />
+                                <AvatarFallback className="text-xs bg-green-screen-100 text-green-screen-400">
+                                  {getInitials(discussion.author?.display_name || 'U')}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-sm text-muted-foreground">
+                                {discussion.author?.display_name || 'Unknown'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            <div className="text-center">
+              <Button asChild variant="outline" className="border-green-screen-200 text-green-screen-400 hover:bg-green-screen-50">
                 <Link to="/discussions">
-                  View All Discussions
+                  See More Discussions
                 </Link>
               </Button>
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-6">
-              <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">
-                Trending Discussions
-              </h2>
-              
-              {trendingDiscussions.map((discussion, index) => (
-                <div 
-                  key={discussion.id} 
-                  className="card-glass rounded-xl p-6 transition-all duration-300 hover:shadow-lg hover-lift animate-fade-in"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <Badge variant={discussion.variant}>
-                      {discussion.category}
+        </div>
+
+        {/* Sidebar */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* Trending Topics */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-screen-400">
+                <BarChart className="h-5 w-5" />
+                Trending Topics
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {trendingTopics.slice(0, 8).map((topic, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      {topic.name}
+                    </span>
+                    <Badge variant="secondary" className="bg-green-screen-100 text-green-screen-400">
+                      {topic.count}
                     </Badge>
-                    <div className="flex items-center text-sm text-slate-500 dark:text-slate-400 space-x-4">
-                      <div className="flex items-center">
-                        <Eye className="h-3 w-3 mr-1" />
-                        <span>{discussion.views}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <MessageSquare className="h-3 w-3 mr-1" />
-                        <span>{discussion.comments}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Heart className="h-3 w-3 mr-1" />
-                        <span>{discussion.likes}</span>
-                      </div>
-                    </div>
                   </div>
-                  
-                  <h3 className="text-xl font-semibold mb-2 text-slate-800 dark:text-slate-200">
-                    <Link to={`/discussions/${discussion.id}`} className="hover:text-green-600 dark:hover:text-green-400 transition-colors">
-                      {discussion.title}
-                    </Link>
-                  </h3>
-                  
-                  <p className="text-slate-600 dark:text-slate-400 mb-4 line-clamp-2">
-                    {discussion.excerpt}
-                  </p>
-                  
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
-                        <span className="text-xs font-medium text-green-800 dark:text-green-300">
-                          {discussion.author.charAt(0)}
-                        </span>
-                      </div>
-                      <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                        {discussion.author}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center text-sm text-slate-500 dark:text-slate-400">
-                      <Clock className="h-3 w-3 mr-1" />
-                      <span>{discussion.postedAt}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              
-              <div className="text-center mt-8">
-                <Button 
-                  className="bg-gradient-to-r from-green-600 to-green-400 hover:from-green-500 hover:to-green-300 text-white shadow-md hover:shadow-lg transition-all"
-                  asChild
-                >
+                ))}
+              </div>
+              <div className="mt-4">
+                <Button asChild variant="outline" size="sm" className="w-full border-green-screen-200 text-green-screen-400 hover:bg-green-screen-50">
                   <Link to="/discussions">
-                    See More Discussions
+                    View All Topics
                   </Link>
                 </Button>
               </div>
-            </div>
-            
-            <div className="space-y-6">
-              <div className="card-glass rounded-xl p-6 animate-fade-in" style={{ animationDelay: "200ms" }}>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200">
-                    Trending Topics
-                  </h2>
-                  <BarChart className="h-5 w-5 text-green-600 dark:text-green-400" />
+            </CardContent>
+          </Card>
+
+          {/* Join The Conversation */}
+          <Card className="bg-gradient-to-br from-green-screen-50 to-green-screen-100 dark:from-green-screen-400/10 dark:to-green-screen-400/5">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-4">
+                <div className="w-12 h-12 mx-auto rounded-full bg-green-screen-200 flex items-center justify-center">
+                  <Users className="h-6 w-6 text-green-screen-400" />
                 </div>
-                
-                <div className="space-y-4">
-                  {trendingTopics.map((topic) => (
-                    <div key={topic.id} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Badge variant={topic.variant} className="min-w-[80px] justify-center">
-                          {topic.category}
-                        </Badge>
-                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300 line-clamp-1">
-                          {topic.name}
-                        </span>
-                      </div>
-                      <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-                        {topic.count}
-                      </span>
-                    </div>
-                  ))}
+                <div>
+                  <h3 className="text-lg font-semibold text-green-screen-400 mb-2">
+                    Join The Conversation
+                  </h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">
+                    Share your experiences, ask questions, and connect with others who understand what you're going through.
+                  </p>
                 </div>
-                
-                <div className="mt-6 pt-4 border-t border-slate-200 dark:border-green-800">
-                  <Button 
-                    variant="outline" 
-                    className="w-full border-green-300 text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-300 dark:hover:bg-green-900/20"
-                  >
-                    View All Topics
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="card-glass rounded-xl p-6 animate-fade-in" style={{ animationDelay: "300ms" }}>
-                <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">
-                  Join The Conversation
-                </h2>
-                <p className="text-slate-600 dark:text-slate-400 mb-6">
-                  Share your experiences, ask questions, and connect with others who understand what you're going through.
-                </p>
-                <Button 
-                  className="w-full bg-gradient-to-r from-green-600 to-green-400 hover:from-green-500 hover:to-green-300 text-white"
-                  asChild
-                >
+                <Button asChild className="w-full bg-green-screen-200 hover:bg-green-screen-300 text-green-screen-400">
                   <Link to="/waitlist">
                     Join MentConv
                   </Link>
                 </Button>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
+
+          {/* Community Stats */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-green-screen-400">Community Stats</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Users className="h-4 w-4 text-green-screen-400" />
+                    <span className="text-sm">Active Members</span>
+                  </div>
+                  <span className="text-sm font-semibold">50K+</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <MessageSquare className="h-4 w-4 text-green-screen-400" />
+                    <span className="text-sm">Discussions</span>
+                  </div>
+                  <span className="text-sm font-semibold">100K+</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <BookOpen className="h-4 w-4 text-green-screen-400" />
+                    <span className="text-sm">Resources</span>
+                  </div>
+                  <span className="text-sm font-semibold">500+</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Award className="h-4 w-4 text-green-screen-400" />
+                    <span className="text-sm">Experts</span>
+                  </div>
+                  <span className="text-sm font-semibold">200+</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </main>
-      
-      <Footer />
+      </div>
     </div>
   );
-};
-
-export default Trending;
+}
