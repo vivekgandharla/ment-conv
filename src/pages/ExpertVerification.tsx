@@ -25,6 +25,31 @@ import {
   AlertCircle
 } from 'lucide-react';
 
+// Add new interfaces for enhanced features
+interface VerificationStep {
+  step: number;
+  title: string;
+  description: string;
+  completed: boolean;
+  required: boolean;
+}
+
+interface VerificationBenefit {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+}
+
+interface ExpertDirectory {
+  id: string;
+  name: string;
+  profession: string;
+  organization: string;
+  experience_years: number;
+  verified_at: string;
+  avatar_url: string | null;
+}
+
 interface ExpertVerification {
   id: string;
   user_id: string;
@@ -51,6 +76,8 @@ export default function ExpertVerification() {
   const [verification, setVerification] = useState<ExpertVerification | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [documents, setDocuments] = useState<File[]>([]);
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
@@ -62,6 +89,67 @@ export default function ExpertVerification() {
     website: '',
     linkedin_url: ''
   });
+
+  // Dummy data for showcase
+  const verificationSteps: VerificationStep[] = [
+    { step: 1, title: 'Basic Information', description: 'Fill in your personal and professional details', completed: true, required: true },
+    { step: 2, title: 'Credentials', description: 'Provide your educational and professional credentials', completed: true, required: true },
+    { step: 3, title: 'Document Upload', description: 'Upload supporting documents (license, certificates)', completed: false, required: true },
+    { step: 4, title: 'Review', description: 'Our team will review your application within 2-3 business days', completed: false, required: false }
+  ];
+
+  const verificationBenefits: VerificationBenefit[] = [
+    {
+      title: 'Expert Badge',
+      description: 'Display a verified expert badge on your profile and posts',
+      icon: <Award className="h-6 w-6" />
+    },
+    {
+      title: 'Priority Support',
+      description: 'Get priority access to community support and resources',
+      icon: <CheckCircle className="h-6 w-6" />
+    },
+    {
+      title: 'Expert Directory',
+      description: 'Be featured in our expert directory for community members',
+      icon: <User className="h-6 w-6" />
+    },
+    {
+      title: 'Content Moderation',
+      description: 'Help moderate discussions and provide expert guidance',
+      icon: <FileText className="h-6 w-6" />
+    }
+  ];
+
+  const expertDirectory: ExpertDirectory[] = [
+    {
+      id: '1',
+      name: 'Dr. Sarah Johnson',
+      profession: 'Clinical Psychologist',
+      organization: 'Mental Health Institute',
+      experience_years: 8,
+      verified_at: '2024-01-10T14:30:00Z',
+      avatar_url: null
+    },
+    {
+      id: '2',
+      name: 'Michael Chen',
+      profession: 'Licensed Therapist',
+      organization: 'Wellness Center',
+      experience_years: 5,
+      verified_at: '2024-01-08T11:20:00Z',
+      avatar_url: null
+    },
+    {
+      id: '3',
+      name: 'Dr. Emily Rodriguez',
+      profession: 'Psychiatrist',
+      organization: 'Community Health',
+      experience_years: 12,
+      verified_at: '2024-01-05T09:15:00Z',
+      avatar_url: null
+    }
+  ];
 
   useEffect(() => {
     if (user) {
@@ -143,6 +231,32 @@ export default function ExpertVerification() {
     }
   };
 
+  const handleDocumentUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    setDocuments(prev => [...prev, ...files]);
+    
+    toast({
+      title: "Documents Uploaded",
+      description: `${files.length} document(s) added to your application`,
+    });
+  };
+
+  const removeDocument = (index: number) => {
+    setDocuments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const getCurrentStep = () => {
+    if (!verification) return 1;
+    if (verification.status === 'approved') return 4;
+    if (verification.status === 'rejected') return 3;
+    return 3; // Pending review
+  };
+
+  const getApplicationProgress = () => {
+    const currentStep = getCurrentStep();
+    return (currentStep / 4) * 100;
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'approved':
@@ -204,58 +318,229 @@ export default function ExpertVerification() {
         <div className="text-center space-y-4">
           <div className="flex justify-center">
             <div className="w-16 h-16 bg-green-screen-100 rounded-full flex items-center justify-center">
-              <Award className="w-8 h-8 text-green-screen-400" />
+              <Award className="h-8 w-8 text-green-screen-400" />
             </div>
           </div>
           <div>
             <h1 className="text-3xl font-bold text-green-screen-400">Expert Verification</h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Apply to become a verified mental health expert and help others with your professional knowledge and experience.
+            <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
+              Get verified as a mental health professional and help others with your expertise. 
+              Join our community of verified experts making a difference.
             </p>
           </div>
         </div>
 
-        {/* Benefits Section */}
-        <Card className="bg-green-screen-50 border-green-screen-100">
-          <CardHeader>
-            <CardTitle className="text-green-screen-400">Benefits of Expert Verification</CardTitle>
-            <CardDescription>
-              Verified experts receive special recognition and privileges on our platform
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="flex items-start space-x-3">
-                <CheckCircle className="w-5 h-5 text-green-screen-400 mt-0.5" />
-                <div>
-                  <h4 className="font-medium">Verified Badge</h4>
-                  <p className="text-sm text-muted-foreground">Display your verified status on all posts and comments</p>
+          {/* Progress Tracking */}
+          {verification && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Application Progress</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Progress</span>
+                    <span className="text-sm text-slate-500">{getApplicationProgress()}%</span>
+                  </div>
+                  <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                    <div 
+                      className="bg-green-screen-400 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${getApplicationProgress()}%` }}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+                    {verificationSteps.map((step) => (
+                      <div key={step.step} className="text-center">
+                        <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center text-sm font-medium ${
+                          step.completed 
+                            ? 'bg-green-screen-400 text-white' 
+                            : 'bg-slate-200 dark:bg-slate-700 text-slate-500'
+                        }`}>
+                          {step.completed ? '✓' : step.step}
+                        </div>
+                        <div className="mt-2">
+                          <div className="text-xs font-medium text-slate-800 dark:text-slate-200">
+                            {step.title}
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">
+                            {step.description}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Verification Benefits */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Benefits of Verification</CardTitle>
+              <CardDescription>
+                What you'll get as a verified expert
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {verificationBenefits.map((benefit, index) => (
+                  <div key={index} className="flex items-start space-x-3">
+                    <div className="w-10 h-10 rounded-lg bg-green-screen-100 flex items-center justify-center text-green-screen-400">
+                      {benefit.icon}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-slate-800 dark:text-slate-200">
+                        {benefit.title}
+                      </h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        {benefit.description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Expert Directory Preview */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Expert Directory</CardTitle>
+              <CardDescription>
+                Join our community of verified mental health professionals
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {expertDirectory.map((expert) => (
+                  <div key={expert.id} className="flex items-center space-x-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <div className="w-10 h-10 rounded-full bg-green-screen-100 flex items-center justify-center text-green-screen-400 font-semibold">
+                      {expert.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold text-slate-800 dark:text-slate-200">
+                        {expert.name}
+                      </div>
+                      <div className="text-sm text-slate-600 dark:text-slate-400">
+                        {expert.profession} • {expert.organization}
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                        {expert.experience_years} years experience
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Application Tips */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Application Tips</CardTitle>
+              <CardDescription>
+                How to increase your chances of approval
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 rounded-full bg-green-screen-100 flex items-center justify-center text-green-screen-400 text-xs font-bold">
+                    1
+                  </div>
+                  <div>
+                    <div className="font-medium text-slate-800 dark:text-slate-200">
+                      Complete All Required Fields
+                    </div>
+                    <div className="text-sm text-slate-600 dark:text-slate-400">
+                      Ensure all required information is provided accurately
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 rounded-full bg-green-screen-100 flex items-center justify-center text-green-screen-400 text-xs font-bold">
+                    2
+                  </div>
+                  <div>
+                    <div className="font-medium text-slate-800 dark:text-slate-200">
+                      Upload Supporting Documents
+                    </div>
+                    <div className="text-sm text-slate-600 dark:text-slate-400">
+                      Include licenses, certificates, or other relevant credentials
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 rounded-full bg-green-screen-100 flex items-center justify-center text-green-screen-400 text-xs font-bold">
+                    3
+                  </div>
+                  <div>
+                    <div className="font-medium text-slate-800 dark:text-slate-200">
+                      Provide Detailed Information
+                    </div>
+                    <div className="text-sm text-slate-600 dark:text-slate-400">
+                      Include your experience, specializations, and professional background
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-start space-x-3">
-                <CheckCircle className="w-5 h-5 text-green-screen-400 mt-0.5" />
-                <div>
-                  <h4 className="font-medium">Priority Responses</h4>
-                  <p className="text-sm text-muted-foreground">Your responses appear higher in discussion threads</p>
+            </CardContent>
+          </Card>
+
+          {/* Document Upload Section */}
+          {!verification && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Supporting Documents</CardTitle>
+                <CardDescription>
+                  Upload relevant documents to support your application
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-6 text-center">
+                    <input
+                      type="file"
+                      multiple
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      onChange={handleDocumentUpload}
+                      className="hidden"
+                      id="document-upload"
+                    />
+                    <label htmlFor="document-upload" className="cursor-pointer">
+                      <FileText className="h-8 w-8 mx-auto text-slate-400 mb-2" />
+                      <div className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                        Click to upload documents
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                        PDF, DOC, or images (max 10MB each)
+                      </div>
+                    </label>
+                  </div>
+                  
+                  {documents.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="font-medium text-sm">Uploaded Documents:</div>
+                      {documents.map((doc, index) => (
+                        <div key={index} className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-800 rounded">
+                          <span className="text-sm">{doc.name}</span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeDocument(index)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <CheckCircle className="w-5 h-5 text-green-screen-400 mt-0.5" />
-                <div>
-                  <h4 className="font-medium">Resource Creation</h4>
-                  <p className="text-sm text-muted-foreground">Create and share professional mental health resources</p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <CheckCircle className="w-5 h-5 text-green-screen-400 mt-0.5" />
-                <div>
-                  <h4 className="font-medium">Community Trust</h4>
-                  <p className="text-sm text-muted-foreground">Build trust with the community through verification</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          )}
 
         {/* Existing Application Status */}
         {verification && (

@@ -37,7 +37,8 @@ import {
   Heart,
   Bookmark,
   Play,
-  Headphones
+  Headphones,
+  ChevronDown, ChevronRight, Minus
 } from 'lucide-react';
 
 interface Discussion {
@@ -103,6 +104,72 @@ interface Category {
   description: string | null;
 }
 
+// Add dummy data for showcase
+const dummyCategories: Category[] = [
+  { id: '1', name: 'Anxiety', color: '#FF6B6B', description: 'Discussions about anxiety and stress' },
+  { id: '2', name: 'Depression', color: '#4ECDC4', description: 'Support for depression and mood' },
+  { id: '3', name: 'Self-Care', color: '#45B7D1', description: 'Self-care and wellness tips' },
+  { id: '4', name: 'Relationships', color: '#96CEB4', description: 'Relationship and social support' },
+  { id: '5', name: 'Therapy', color: '#FFEAA7', description: 'Therapy and professional help' }
+];
+
+const dummyDiscussions: Discussion[] = [
+  {
+    id: '1',
+    title: 'How do you cope with anxiety?',
+    content: 'I\'ve been struggling with anxiety lately and would love to hear how others manage it. What techniques work best for you?',
+    author_id: 'user1',
+    category_id: '1',
+    is_anonymous: false,
+    anonymous_name: null,
+    view_count: 156,
+    comment_count: 8,
+    upvote_count: 23,
+    downvote_count: 2,
+    created_at: '2024-01-15T10:00:00Z',
+    updated_at: '2024-01-15T10:00:00Z',
+    author: { display_name: 'Sarah M.', avatar_url: null },
+    category: { name: 'Anxiety', color: '#FF6B6B' },
+    user_vote: null
+  },
+  {
+    id: '2',
+    title: 'Daily mindfulness routine',
+    content: 'I started a 10-minute daily mindfulness practice and it\'s been amazing for my mental health. Anyone else have a routine they\'d like to share?',
+    author_id: 'user2',
+    category_id: '3',
+    is_anonymous: false,
+    anonymous_name: null,
+    view_count: 89,
+    comment_count: 12,
+    upvote_count: 45,
+    downvote_count: 1,
+    created_at: '2024-01-14T14:30:00Z',
+    updated_at: '2024-01-14T14:30:00Z',
+    author: { display_name: 'Mike R.', avatar_url: null },
+    category: { name: 'Self-Care', color: '#45B7D1' },
+    user_vote: null
+  },
+  {
+    id: '3',
+    title: 'Anonymous: Feeling overwhelmed',
+    content: 'I\'m feeling really overwhelmed with work and life right now. Just needed to get this off my chest.',
+    author_id: null,
+    category_id: '2',
+    is_anonymous: true,
+    anonymous_name: 'Anonymous',
+    view_count: 203,
+    comment_count: 15,
+    upvote_count: 67,
+    downvote_count: 3,
+    created_at: '2024-01-13T09:15:00Z',
+    updated_at: '2024-01-13T09:15:00Z',
+    author: undefined,
+    category: { name: 'Depression', color: '#4ECDC4' },
+    user_vote: null
+  }
+];
+
 export default function Discussions() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -124,7 +191,7 @@ export default function Discussions() {
     title: '',
     description: '',
     url: '',
-    type: 'article' as const,
+    type: 'article' as 'article' | 'video' | 'podcast' | 'book' | 'exercise' | 'other',
     author: ''
   });
 
@@ -136,10 +203,13 @@ export default function Discussions() {
     anonymous_name: ''
   });
 
+  const [collapsedComments, setCollapsedComments] = useState<Set<string>>(new Set());
+  const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
+
   useEffect(() => {
     fetchDiscussions();
     fetchCategories();
-  }, []);
+  }, [searchTerm, selectedCategory, sortBy]);
 
   const fetchCategories = async () => {
     try {
@@ -149,25 +219,27 @@ export default function Discussions() {
         .order('name');
       
       if (error) throw error;
-      setCategories(data || []);
+      // Use dummy data if no categories found
+      setCategories(data?.length ? data : dummyCategories);
     } catch (error) {
       console.error('Error fetching categories:', error);
+      // Fallback to dummy data
+      setCategories(dummyCategories);
     }
   };
 
   const fetchDiscussions = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       let query = supabase
         .from('discussions')
         .select(`
           *,
           author:profiles(display_name, avatar_url),
-          category:categories(name, color),
-          user_vote:votes(type)
-        `)
-        .order('created_at', { ascending: false });
+          category:categories(name, color)
+        `);
 
+      // Apply filters
       if (selectedCategory) {
         query = query.eq('category_id', selectedCategory);
       }
@@ -176,15 +248,56 @@ export default function Discussions() {
         query = query.or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%`);
       }
 
+      // Apply sorting
+      switch (sortBy) {
+        case 'latest':
+          query = query.order('created_at', { ascending: false });
+          break;
+        case 'popular':
+          query = query.order('upvote_count', { ascending: false });
+          break;
+        case 'trending':
+          query = query.order('view_count', { ascending: false });
+          break;
+        case 'most_commented':
+          query = query.order('comment_count', { ascending: false });
+          break;
+        default:
+          query = query.order('created_at', { ascending: false });
+      }
+
       const { data, error } = await query;
-      
+
       if (error) throw error;
-      setDiscussions(data || []);
+
+      // Fetch user votes separately to avoid the relation error
+      let discussionsWithVotes = data || [];
+      if (user) {
+        const { data: userVotes } = await supabase
+          .from('votes')
+          .select('target_id, vote_type')
+          .eq('user_id', user.id)
+          .eq('target_type', 'discussion');
+
+        discussionsWithVotes = data?.map(discussion => ({
+          ...discussion,
+          user_vote: userVotes?.find(vote => vote.target_id === discussion.id)?.vote_type as 'upvote' | 'downvote' | null
+        })) || [];
+      }
+
+      // Use dummy data if no discussions found
+      if (!discussionsWithVotes.length) {
+        discussionsWithVotes = dummyDiscussions;
+      }
+
+      setDiscussions(discussionsWithVotes as Discussion[]);
     } catch (error) {
       console.error('Error fetching discussions:', error);
+      // Fallback to dummy data
+      setDiscussions(dummyDiscussions);
       toast({
         title: "Error",
-        description: "Failed to load discussions",
+        description: "Failed to load discussions, showing sample data",
         variant: "destructive",
       });
     } finally {
@@ -198,17 +311,31 @@ export default function Discussions() {
         .from('comments')
         .select(`
           *,
-          author:profiles(display_name, avatar_url),
-          user_vote:votes(type)
+          author:profiles(display_name, avatar_url)
         `)
         .eq('discussion_id', discussionId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
 
+      // Fetch user votes for comments separately
+      let commentsWithVotes = data || [];
+      if (user) {
+        const { data: userVotes } = await supabase
+          .from('votes')
+          .select('target_id, vote_type')
+          .eq('user_id', user.id)
+          .eq('target_type', 'comment');
+
+        commentsWithVotes = data?.map(comment => ({
+          ...comment,
+          user_vote: userVotes?.find(vote => vote.target_id === comment.id)?.vote_type as 'upvote' | 'downvote' | null
+        })) || [];
+      }
+
       // Organize comments into hierarchy
-      const topLevelComments = data?.filter(comment => !comment.parent_comment_id) || [];
-      const replies = data?.filter(comment => comment.parent_comment_id) || [];
+      const topLevelComments = commentsWithVotes.filter(comment => !comment.parent_comment_id);
+      const replies = commentsWithVotes.filter(comment => comment.parent_comment_id);
 
       const organizedComments = topLevelComments.map(comment => ({
         ...comment,
@@ -242,7 +369,7 @@ export default function Discussions() {
         .single();
 
       if (existingVote) {
-        if (existingVote.type === voteType) {
+        if (existingVote.vote_type === voteType) {
           // Remove vote if clicking same button
           await supabase
             .from('votes')
@@ -252,7 +379,7 @@ export default function Discussions() {
           // Update vote
           await supabase
             .from('votes')
-            .update({ type: voteType })
+            .update({ vote_type: voteType })
             .eq('id', existingVote.id);
         }
       } else {
@@ -263,7 +390,7 @@ export default function Discussions() {
             user_id: user.id,
             target_id: targetId,
             target_type: targetType,
-            type: voteType
+            vote_type: voteType
           });
       }
 
@@ -279,7 +406,7 @@ export default function Discussions() {
         let newDownvotes = currentData.downvote_count;
 
         if (existingVote) {
-          if (existingVote.type === voteType) {
+          if (existingVote.vote_type === voteType) {
             // Remove vote
             if (voteType === 'upvote') newUpvotes--;
             else newDownvotes--;
@@ -308,22 +435,17 @@ export default function Discussions() {
           .eq('id', targetId);
       }
 
-      // Refresh data
+      // Refresh the data
       if (targetType === 'discussion') {
         fetchDiscussions();
       } else {
         fetchComments(selectedDiscussion?.id || '');
       }
-
-      toast({
-        title: "Vote recorded",
-        description: `Your ${voteType} has been recorded`,
-      });
     } catch (error) {
       console.error('Error voting:', error);
       toast({
         title: "Error",
-        description: "Failed to record vote",
+        description: "Failed to vote",
         variant: "destructive",
       });
     }
@@ -498,6 +620,207 @@ export default function Discussions() {
       case 'exercise': return <Heart className="h-4 w-4" />;
       default: return <LinkIcon className="h-4 w-4" />;
     }
+  };
+  
+  const toggleCommentCollapse = (commentId: string) => {
+    const newCollapsed = new Set(collapsedComments);
+    if (newCollapsed.has(commentId)) {
+      newCollapsed.delete(commentId);
+    } else {
+      newCollapsed.add(commentId);
+    }
+    setCollapsedComments(newCollapsed);
+  };
+
+  const toggleRepliesExpansion = (commentId: string) => {
+    const newExpanded = new Set(expandedReplies);
+    if (newExpanded.has(commentId)) {
+      newExpanded.delete(commentId);
+    } else {
+      newExpanded.add(commentId);
+    }
+    setExpandedReplies(newExpanded);
+  };
+
+  const renderComment = (comment: Comment, depth: number = 0, isReply: boolean = false) => {
+    const isCollapsed = collapsedComments.has(comment.id);
+    const hasReplies = comment.replies && comment.replies.length > 0;
+    const isExpanded = expandedReplies.has(comment.id);
+
+    return (
+      <div key={comment.id} className="space-y-3">
+        <div className={`flex space-x-4 ${isReply ? 'ml-8' : ''}`}>
+          {/* Thread line for replies */}
+          {isReply && (
+            <div className="relative">
+              <div className="absolute left-4 top-0 bottom-0 w-px bg-gray-200 dark:bg-gray-700" />
+            </div>
+          )}
+          
+          <div className="flex flex-col items-center space-y-2 min-w-[40px]">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleVote(comment.id, 'comment', 'upvote')}
+              className={`h-6 w-6 p-0 ${comment.user_vote === 'upvote' ? 'text-green-screen-400' : 'text-muted-foreground'}`}
+            >
+              <ThumbsUp className="h-3 w-3" />
+            </Button>
+            <span className="text-xs font-medium text-green-screen-400">
+              {comment.upvote_count - comment.downvote_count}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleVote(comment.id, 'comment', 'downvote')}
+              className={`h-6 w-6 p-0 ${comment.user_vote === 'downvote' ? 'text-red-500' : 'text-muted-foreground'}`}
+            >
+              <ThumbsDown className="h-3 w-3" />
+            </Button>
+          </div>
+          
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center space-x-2">
+              <Avatar className="h-6 w-6">
+                <AvatarImage src={comment.author?.avatar_url || ''} />
+                <AvatarFallback className="text-xs bg-green-screen-100 text-green-screen-400">
+                  {comment.is_anonymous ? (
+                    <UserX className="h-3 w-3" />
+                  ) : (
+                    getInitials(comment.author?.display_name || comment.anonymous_name || 'U')
+                  )}
+                </AvatarFallback>
+              </Avatar>
+              <span className="font-medium text-sm">
+                {comment.is_anonymous 
+                  ? comment.anonymous_name || 'Anonymous'
+                  : comment.author?.display_name || 'Unknown User'
+                }
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {formatTimeAgo(comment.created_at)}
+              </span>
+              {hasReplies && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => toggleCommentCollapse(comment.id)}
+                  className="text-xs h-6 px-2 text-muted-foreground hover:text-green-screen-400"
+                >
+                  {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  {comment.replies?.length || 0} {comment.replies?.length === 1 ? 'reply' : 'replies'}
+                </Button>
+              )}
+            </div>
+            
+            {!isCollapsed && (
+              <>
+                <p className="text-sm text-muted-foreground">{comment.content}</p>
+                <div className="flex items-center space-x-2">
+                  {user && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setReplyingTo(comment.id)}
+                      className="text-xs h-6 px-2"
+                    >
+                      <Reply className="h-3 w-3 mr-1" />
+                      Reply
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowResourceDialog(true)}
+                    className="text-xs h-6 px-2"
+                  >
+                    <Share2 className="h-3 w-3 mr-1" />
+                    Share Resource
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+        
+        {/* Reply Form */}
+        {user && replyingTo === comment.id && !isCollapsed && (
+          <Card className="ml-12 bg-green-screen-50/30 border-green-screen-100">
+            <CardContent className="p-3">
+              <div className="space-y-3">
+                <Textarea
+                  value={commentContent}
+                  onChange={(e) => setCommentContent(e.target.value)}
+                  placeholder="Reply to this comment..."
+                  rows={2}
+                  className="bg-white border-green-screen-100 focus:border-green-screen-200"
+                />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="reply-anonymous"
+                      checked={commentIsAnonymous}
+                      onCheckedChange={setCommentIsAnonymous}
+                    />
+                    <Label htmlFor="reply-anonymous">Reply anonymously</Label>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setReplyingTo(null)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleCreateComment(selectedDiscussion.id, comment.id)}
+                      disabled={!commentContent.trim()}
+                      className="bg-green-screen-200 hover:bg-green-screen-300 text-green-screen-400"
+                    >
+                      Post Reply
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
+        {/* Replies */}
+        {hasReplies && !isCollapsed && (
+          <div className="ml-8 space-y-3">
+            {comment.replies?.slice(0, isExpanded ? undefined : 3).map((reply) => 
+              renderComment(reply, depth + 1, true)
+            )}
+            
+            {comment.replies && comment.replies.length > 3 && (
+              <div className="ml-8">
+                {!isExpanded ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleRepliesExpansion(comment.id)}
+                    className="text-xs h-6 px-2 text-muted-foreground hover:text-green-screen-400"
+                  >
+                    Show {comment.replies.length - 3} more replies
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleRepliesExpansion(comment.id)}
+                    className="text-xs h-6 px-2 text-muted-foreground hover:text-green-screen-400"
+                  >
+                    Show less
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
   };
   
   return (
@@ -881,178 +1204,7 @@ export default function Discussions() {
 
                 {/* Comments List */}
                 <div className="space-y-4">
-                  {comments.map((comment) => (
-                    <div key={comment.id} className="space-y-3">
-                      <div className="flex space-x-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <div className="flex flex-col items-center space-y-2 min-w-[40px]">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleVote(comment.id, 'comment', 'upvote')}
-                            className={`h-6 w-6 p-0 ${comment.user_vote === 'upvote' ? 'text-green-screen-400' : 'text-muted-foreground'}`}
-                          >
-                            <ThumbsUp className="h-3 w-3" />
-                          </Button>
-                          <span className="text-xs font-medium text-green-screen-400">
-                            {comment.upvote_count - comment.downvote_count}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleVote(comment.id, 'comment', 'downvote')}
-                            className={`h-6 w-6 p-0 ${comment.user_vote === 'downvote' ? 'text-red-500' : 'text-muted-foreground'}`}
-                          >
-                            <ThumbsDown className="h-3 w-3" />
-                          </Button>
-                        </div>
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-center space-x-2">
-                            <Avatar className="h-6 w-6">
-                              <AvatarImage src={comment.author?.avatar_url || ''} />
-                              <AvatarFallback className="text-xs bg-green-screen-100 text-green-screen-400">
-                                {comment.is_anonymous ? (
-                                  <UserX className="h-3 w-3" />
-                                ) : (
-                                  getInitials(comment.author?.display_name || comment.anonymous_name || 'U')
-                                )}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="font-medium text-sm">
-                              {comment.is_anonymous 
-                                ? comment.anonymous_name || 'Anonymous'
-                                : comment.author?.display_name || 'Unknown User'
-                              }
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {formatTimeAgo(comment.created_at)}
-                            </span>
-                          </div>
-                          <p className="text-sm text-muted-foreground">{comment.content}</p>
-                          <div className="flex items-center space-x-2">
-                            {user && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setReplyingTo(comment.id)}
-                                className="text-xs h-6 px-2"
-                              >
-                                <Reply className="h-3 w-3 mr-1" />
-                                Reply
-                              </Button>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setShowResourceDialog(true)}
-                              className="text-xs h-6 px-2"
-                            >
-                              <Share2 className="h-3 w-3 mr-1" />
-                              Share Resource
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Reply Form */}
-                      {user && replyingTo === comment.id && (
-                        <Card className="ml-8 bg-green-screen-50/30 border-green-screen-100">
-                          <CardContent className="p-3">
-                            <div className="space-y-3">
-                              <Textarea
-                                value={commentContent}
-                                onChange={(e) => setCommentContent(e.target.value)}
-                                placeholder="Reply to this comment..."
-                                rows={2}
-                                className="bg-white border-green-screen-100 focus:border-green-screen-200"
-                              />
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-2">
-                                  <Switch
-                                    id="reply-anonymous"
-                                    checked={commentIsAnonymous}
-                                    onCheckedChange={setCommentIsAnonymous}
-                                  />
-                                  <Label htmlFor="reply-anonymous">Reply anonymously</Label>
-                                </div>
-                                <div className="flex space-x-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setReplyingTo(null)}
-                                  >
-                                    Cancel
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleCreateComment(selectedDiscussion.id, comment.id)}
-                                    disabled={!commentContent.trim()}
-                                    className="bg-green-screen-200 hover:bg-green-screen-300 text-green-screen-400"
-                                  >
-                                    Post Reply
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
-                      
-                      {/* Replies */}
-                      {comment.replies && comment.replies.length > 0 && (
-                        <div className="ml-8 space-y-3">
-                          {comment.replies.map((reply) => (
-                            <div key={reply.id} className="flex space-x-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                              <div className="flex flex-col items-center space-y-1 min-w-[30px]">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleVote(reply.id, 'comment', 'upvote')}
-                                  className={`h-5 w-5 p-0 ${reply.user_vote === 'upvote' ? 'text-green-screen-400' : 'text-muted-foreground'}`}
-                                >
-                                  <ThumbsUp className="h-2 w-2" />
-                                </Button>
-                                <span className="text-xs font-medium text-green-screen-400">
-                                  {reply.upvote_count - reply.downvote_count}
-                                </span>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleVote(reply.id, 'comment', 'downvote')}
-                                  className={`h-5 w-5 p-0 ${reply.user_vote === 'downvote' ? 'text-red-500' : 'text-muted-foreground'}`}
-                                >
-                                  <ThumbsDown className="h-2 w-2" />
-                                </Button>
-                              </div>
-                              <div className="flex-1 space-y-1">
-                                <div className="flex items-center space-x-2">
-                                  <Avatar className="h-5 w-5">
-                                    <AvatarImage src={reply.author?.avatar_url || ''} />
-                                    <AvatarFallback className="text-xs bg-green-screen-100 text-green-screen-400">
-                                      {reply.is_anonymous ? (
-                                        <UserX className="h-2 w-2" />
-                                      ) : (
-                                        getInitials(reply.author?.display_name || reply.anonymous_name || 'U')
-                                      )}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <span className="font-medium text-xs">
-                                    {reply.is_anonymous 
-                                      ? reply.anonymous_name || 'Anonymous'
-                                      : reply.author?.display_name || 'Unknown User'
-                                    }
-                                  </span>
-                                  <span className="text-xs text-muted-foreground">
-                                    {formatTimeAgo(reply.created_at)}
-                                  </span>
-                                </div>
-                                <p className="text-xs text-muted-foreground">{reply.content}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                  {comments.map((comment) => renderComment(comment))}
                 </div>
               </div>
             </div>
@@ -1103,7 +1255,7 @@ export default function Discussions() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="resource-type">Type</Label>
-              <Select value={resourceData.type} onValueChange={(value: any) => setResourceData({ ...resourceData, type: value })}>
+              <Select value={resourceData.type} onValueChange={(value: 'article' | 'video' | 'podcast' | 'book' | 'exercise' | 'other') => setResourceData({ ...resourceData, type: value })}>
                 <SelectTrigger className="bg-green-screen-50 border-green-screen-100 focus:border-green-screen-200">
                   <SelectValue />
                 </SelectTrigger>

@@ -62,6 +62,85 @@ const Index: React.FC = () => {
       content: "The expert resources and guided practices have been invaluable in my recovery journey. This platform truly cares about mental health.",
       avatar: "ML",
       rating: 5
+    },
+    {
+      name: "David R.",
+      role: "Therapist & Member",
+      content: "As a mental health professional, I appreciate how this platform bridges the gap between professional support and peer connection.",
+      avatar: "DR",
+      rating: 5
+    },
+    {
+      name: "Emma T.",
+      role: "New Member",
+      content: "I was hesitant to join, but the anonymous features made me feel safe. Now I can't imagine my recovery journey without this community.",
+      avatar: "ET",
+      rating: 5
+    },
+    {
+      name: "James P.",
+      role: "Wellness Coach",
+      content: "The resources here are top-notch. I often recommend this platform to my clients as a supplement to professional therapy.",
+      avatar: "JP",
+      rating: 5
+    }
+  ];
+
+  const recentDiscussions = [
+    {
+      title: "How do you cope with anxiety?",
+      author: "Sarah M.",
+      replies: 8,
+      category: "Anxiety",
+      timeAgo: "2 hours ago"
+    },
+    {
+      title: "Daily mindfulness routine that works",
+      author: "Mike R.",
+      replies: 12,
+      category: "Self-Care",
+      timeAgo: "4 hours ago"
+    },
+    {
+      title: "Anonymous: Feeling overwhelmed",
+      author: "Anonymous",
+      replies: 15,
+      category: "Depression",
+      timeAgo: "6 hours ago"
+    },
+    {
+      title: "Tips for better sleep hygiene",
+      author: "Lisa K.",
+      replies: 6,
+      category: "Wellness",
+      timeAgo: "8 hours ago"
+    }
+  ];
+
+  const howItWorks = [
+    {
+      step: "01",
+      title: "Join the Community",
+      description: "Sign up for free and create your profile. You can browse anonymously or connect with others.",
+      icon: <Users className="h-8 w-8" />
+    },
+    {
+      step: "02",
+      title: "Share Your Story",
+      description: "Post discussions anonymously or with your identity. Share experiences, ask questions, or offer support.",
+      icon: <MessageSquare className="h-8 w-8" />
+    },
+    {
+      step: "03",
+      title: "Connect & Support",
+      description: "Engage with others through comments, upvotes, and resource sharing. Build meaningful connections.",
+      icon: <Heart className="h-8 w-8" />
+    },
+    {
+      step: "04",
+      title: "Access Resources",
+      description: "Discover expert-curated resources, exercises, and tools to support your mental health journey.",
+      icon: <BookOpen className="h-8 w-8" />
     }
   ];
 
@@ -333,9 +412,9 @@ const Index: React.FC = () => {
               </p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {testimonials.map((testimonial, index) => (
-                <Card key={index} className="animate-fade-in hover-lift" style={{ animationDelay: `${index * 200}ms` }}>
+                <Card key={index} className="animate-fade-in hover-lift" style={{ animationDelay: `${index * 100}ms` }}>
                   <CardContent className="p-6">
                     <div className="flex items-center gap-1 mb-4">
                       {[...Array(testimonial.rating)].map((_, i) => (
@@ -362,6 +441,94 @@ const Index: React.FC = () => {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* How It Works Section */}
+        <section className="py-20 px-4 bg-white dark:bg-green-screen-400/5">
+          <div className="container max-w-6xl mx-auto">
+            <div className="text-center mb-16 animate-fade-in">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-green-screen-400">
+                How It Works
+              </h2>
+              <p className="text-lg text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
+                Getting started with MentConv is simple. Join our community and begin your wellness journey in just a few steps.
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {howItWorks.map((step, index) => (
+                <div key={index} className="text-center animate-fade-in" style={{ animationDelay: `${index * 200}ms` }}>
+                  <div className="relative mb-6">
+                    <div className="w-16 h-16 mx-auto rounded-full bg-green-screen-100 flex items-center justify-center text-green-screen-400 mb-4">
+                      {step.icon}
+                    </div>
+                    <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-green-screen-200 flex items-center justify-center text-green-screen-400 font-bold text-sm">
+                      {step.step}
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+                    {step.title}
+                  </h3>
+                  <p className="text-slate-600 dark:text-slate-400">
+                    {step.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Recent Discussions Section */}
+        <section className="py-20 px-4 bg-green-screen-50/50 dark:bg-green-screen-400/5">
+          <div className="container max-w-6xl mx-auto">
+            <div className="text-center mb-16 animate-fade-in">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-green-screen-400">
+                Recent Community Discussions
+              </h2>
+              <p className="text-lg text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
+                See what's happening in our community right now. Join the conversation and share your thoughts.
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {recentDiscussions.map((discussion, index) => (
+                <Card key={index} className="animate-fade-in hover-lift cursor-pointer" style={{ animationDelay: `${index * 150}ms` }}>
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-3">
+                      <Badge className="text-xs" style={{ backgroundColor: '#4ECDC4', color: 'white' }}>
+                        {discussion.category}
+                      </Badge>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        {discussion.timeAgo}
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2 text-slate-800 dark:text-slate-200 hover:text-green-screen-400 transition-colors">
+                      {discussion.title}
+                    </h3>
+                    <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
+                      <span>by {discussion.author}</span>
+                      <div className="flex items-center gap-1">
+                        <MessageSquare className="h-4 w-4" />
+                        <span>{discussion.replies} replies</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            
+            <div className="text-center mt-8">
+              <Button 
+                variant="outline" 
+                className="border-green-screen-200 text-green-screen-400 hover:bg-green-screen-50"
+                asChild
+              >
+                <Link to="/discussions">
+                  View All Discussions <ChevronRight className="h-4 w-4 ml-1" />
+                </Link>
+              </Button>
             </div>
           </div>
         </section>

@@ -1,0 +1,19 @@
+
+1.make it fully respoonsive as in mobile its overflowing.
+2.i want add resources in /resources section not in the comments.
+3. i want thread to be infinite hierarchy and like dislike should be working across the app where ever it is.
+4.the nav bar is stil not visible at other pages make sure its intact across the app.
+5. add few dummy data in the discussion and trending section.
+6. the expert verification,join waitlist and moderate form should be in submitted in the database create tables if required.
+7.show profile icon in the mobile view its not shoing inside the accordian.
+8.when in dark mode make sure the texts are white not dark and dark mode is not applicable in comments section etc so make sure its working properly across the app.
+9. try to improve ui like before it was a section where we can choose the category directly, add features that can be helpful for this app.
+10.the bookmark and liked can be seen in your profile, make profile section amazing add more features.
+11.improve the hero section it looks medicore make the hero section look like the picture I've provided.
+12.add pictures related to mental health if required from unsplash.
+13. i want a chat section where users can also talk to each other by adding them as a friend like in Instagram.
+14.add faq.
+15.also only those can comment who are logged in to make it secure.
+16.put resource types on top of cards and make it working of someone clicks articles  it should show articles to filter basically.
+17.want this to be super amazing and working perfectly fine every button, like comment should be stored in the db and must be working throughout the app.
+

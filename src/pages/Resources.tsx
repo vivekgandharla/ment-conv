@@ -33,6 +33,9 @@ import {
   Bookmark,
   BookmarkPlus
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
 
 interface Resource {
   id: string;
@@ -66,166 +69,128 @@ interface Category {
   description: string | null;
 }
 
-// Dummy data for resources
+// Add dummy data for showcase
 const dummyResources: Resource[] = [
   {
     id: '1',
     title: 'Understanding Anxiety: A Complete Guide',
-    description: 'A comprehensive guide to understanding anxiety disorders, their symptoms, and effective coping strategies.',
+    description: 'A comprehensive guide to understanding anxiety disorders, symptoms, and coping strategies.',
     url: 'https://example.com/anxiety-guide',
     resource_type: 'article',
     category_id: '1',
-    author_id: '1',
+    difficulty_level: 'beginner',
+    tags: ['anxiety', 'mental-health', 'coping'],
     rating: 4.8,
     rating_count: 156,
     view_count: 2340,
     is_approved: true,
-    tags: ['anxiety', 'mental-health', 'coping-strategies'],
-    difficulty_level: 'beginner',
     created_at: '2024-01-15T10:00:00Z',
     updated_at: '2024-01-15T10:00:00Z',
-    category: { name: 'Anxiety', color: '#EF4444' },
-    author: { display_name: 'Dr. Sarah Johnson' }
+    author_id: 'user1',
+    category: { id: '1', name: 'Anxiety', color: '#FF6B6B' },
+    author: { id: 'user1', display_name: 'Dr. Sarah Johnson' }
   },
   {
     id: '2',
     title: 'Mindfulness Meditation for Beginners',
-    description: 'Learn the basics of mindfulness meditation with guided sessions and practical tips for daily practice.',
-    url: 'https://example.com/mindfulness-course',
+    description: 'Learn the basics of mindfulness meditation with guided sessions and practical tips.',
+    url: 'https://example.com/mindfulness',
     resource_type: 'video',
-    category_id: '5',
-    author_id: '2',
+    category_id: '2',
+    difficulty_level: 'beginner',
+    tags: ['meditation', 'mindfulness', 'stress-relief'],
     rating: 4.9,
-    rating_count: 89,
+    rating_count: 203,
     view_count: 1890,
     is_approved: true,
-    tags: ['meditation', 'mindfulness', 'stress-relief'],
-    difficulty_level: 'beginner',
     created_at: '2024-01-10T14:30:00Z',
     updated_at: '2024-01-10T14:30:00Z',
-    category: { name: 'Mindfulness', color: '#06B6D4' },
-    author: { display_name: 'Mindful Living Institute' }
+    author_id: 'user2',
+    category: { id: '2', name: 'Meditation', color: '#4ECDC4' },
+    author: { id: 'user2', display_name: 'Mindful Living' }
   },
   {
     id: '3',
-    title: 'The Science of Sleep and Mental Health',
-    description: 'Explore the connection between sleep quality and mental health, with practical tips for better sleep hygiene.',
-    url: 'https://example.com/sleep-science',
-    resource_type: 'podcast',
+    title: 'Cognitive Behavioral Therapy Workbook',
+    description: 'A practical workbook with exercises and techniques for managing negative thoughts.',
+    url: 'https://example.com/cbt-workbook',
+    resource_type: 'exercise',
     category_id: '3',
-    author_id: '3',
-    rating: 4.7,
-    rating_count: 203,
-    view_count: 3120,
-    is_approved: true,
-    tags: ['sleep', 'mental-health', 'wellness'],
     difficulty_level: 'intermediate',
+    tags: ['cbt', 'therapy', 'workbook', 'cognitive'],
+    rating: 4.7,
+    rating_count: 89,
+    view_count: 1670,
+    is_approved: true,
     created_at: '2024-01-08T09:15:00Z',
     updated_at: '2024-01-08T09:15:00Z',
-    category: { name: 'Depression', color: '#3B82F6' },
-    author: { display_name: 'Mental Health Today' }
+    author_id: 'user3',
+    category: { id: '3', name: 'Therapy', color: '#45B7D1' },
+    author: { id: 'user3', display_name: 'Therapy Resources' }
   },
   {
     id: '4',
-    title: 'Daily Self-Care Exercises',
-    description: 'A collection of simple self-care exercises you can do at home to improve your mental well-being.',
-    url: 'https://example.com/self-care-exercises',
-    resource_type: 'exercise',
+    title: 'The Science of Sleep and Mental Health',
+    description: 'Explore the connection between sleep quality and mental health with evidence-based strategies.',
+    url: 'https://example.com/sleep-mental-health',
+    resource_type: 'article',
     category_id: '4',
-    author_id: '4',
+    difficulty_level: 'intermediate',
+    tags: ['sleep', 'mental-health', 'wellness', 'science'],
     rating: 4.6,
     rating_count: 134,
     view_count: 2150,
     is_approved: true,
-    tags: ['self-care', 'exercises', 'wellness'],
-    difficulty_level: 'beginner',
-    created_at: '2024-01-12T16:45:00Z',
-    updated_at: '2024-01-12T16:45:00Z',
-    category: { name: 'Self-Care', color: '#8B5CF6' },
-    author: { display_name: 'Wellness Coach Maria' }
+    created_at: '2024-01-05T16:45:00Z',
+    updated_at: '2024-01-05T16:45:00Z',
+    author_id: 'user4',
+    category: { id: '4', name: 'Sleep', color: '#96CEB4' },
+    author: { id: 'user4', display_name: 'Sleep Science Institute' }
   },
   {
     id: '5',
-    title: 'Cognitive Behavioral Therapy Workbook',
-    description: 'A practical workbook introducing CBT techniques for managing negative thoughts and behaviors.',
-    url: 'https://example.com/cbt-workbook',
-    resource_type: 'book',
-    category_id: '2',
-    author_id: '5',
-    rating: 4.9,
-    rating_count: 278,
-    view_count: 4560,
-    is_approved: true,
-    tags: ['cbt', 'therapy', 'workbook'],
+    title: 'Managing Depression: Practical Strategies',
+    description: 'Evidence-based strategies for managing depression symptoms and improving mood.',
+    url: 'https://example.com/depression-management',
+    resource_type: 'video',
+    category_id: '5',
     difficulty_level: 'intermediate',
-    created_at: '2024-01-05T11:20:00Z',
-    updated_at: '2024-01-05T11:20:00Z',
-    category: { name: 'Anxiety', color: '#EF4444' },
-    author: { display_name: 'Dr. Michael Chen' }
+    tags: ['depression', 'mood', 'strategies', 'mental-health'],
+    rating: 4.5,
+    rating_count: 178,
+    view_count: 1670,
+    is_approved: true,
+    created_at: '2024-01-03T11:20:00Z',
+    updated_at: '2024-01-03T11:20:00Z',
+    author_id: 'user5',
+    category: { id: '5', name: 'Depression', color: '#FFEAA7' },
+    author: { id: 'user5', display_name: 'Mental Health Foundation' }
   },
   {
     id: '6',
-    title: 'Crisis Helpline Directory',
-    description: 'A comprehensive directory of mental health crisis helplines and emergency resources.',
-    url: 'https://example.com/crisis-helplines',
-    resource_type: 'link',
-    category_id: '6',
-    author_id: '6',
+    title: 'Breathing Techniques for Stress Relief',
+    description: 'Learn various breathing techniques to reduce stress and anxiety in daily life.',
+    url: 'https://example.com/breathing-techniques',
+    resource_type: 'exercise',
+    category_id: '2',
+    difficulty_level: 'beginner',
+    tags: ['breathing', 'stress', 'anxiety', 'techniques'],
     rating: 4.8,
-    rating_count: 45,
+    rating_count: 245,
     view_count: 890,
     is_approved: true,
-    tags: ['crisis', 'helpline', 'emergency'],
-    difficulty_level: 'beginner',
-    created_at: '2024-01-20T13:00:00Z',
-    updated_at: '2024-01-20T13:00:00Z',
-    category: { name: 'Support', color: '#F59E0B' },
-    author: { display_name: 'Mental Health Foundation' }
-  },
-  {
-    id: '7',
-    title: 'Advanced Depression Management Techniques',
-    description: 'Advanced strategies for managing depression, including professional treatment approaches.',
-    url: 'https://example.com/depression-advanced',
-    resource_type: 'article',
-    category_id: '3',
-    author_id: '7',
-    rating: 4.7,
-    rating_count: 167,
-    view_count: 2890,
-    is_approved: true,
-    tags: ['depression', 'advanced', 'treatment'],
-    difficulty_level: 'advanced',
-    created_at: '2024-01-18T15:30:00Z',
-    updated_at: '2024-01-18T15:30:00Z',
-    category: { name: 'Depression', color: '#3B82F6' },
-    author: { display_name: 'Dr. Emily Rodriguez' }
-  },
-  {
-    id: '8',
-    title: 'Stress Management Through Exercise',
-    description: 'Learn how physical exercise can help manage stress and improve mental health outcomes.',
-    url: 'https://example.com/exercise-stress',
-    resource_type: 'video',
-    category_id: '4',
-    author_id: '8',
-    rating: 4.5,
-    rating_count: 98,
-    view_count: 1670,
-    is_approved: true,
-    tags: ['exercise', 'stress', 'physical-health'],
-    difficulty_level: 'intermediate',
-    created_at: '2024-01-14T12:00:00Z',
-    updated_at: '2024-01-14T12:00:00Z',
-    category: { name: 'Self-Care', color: '#8B5CF6' },
-    author: { display_name: 'Fitness & Wellness Pro' }
+    created_at: '2024-01-01T13:10:00Z',
+    updated_at: '2024-01-01T13:10:00Z',
+    author_id: 'user6',
+    category: { id: '2', name: 'Meditation', color: '#4ECDC4' },
+    author: { id: 'user6', display_name: 'Wellness Coach' }
   }
 ];
 
 export default function Resources() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [resources, setResources] = useState<Resource[]>(dummyResources);
+  const [resources, setResources] = useState<Resource[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -234,10 +199,42 @@ export default function Resources() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('rating');
   const [bookmarkedResources, setBookmarkedResources] = useState<string[]>([]);
+  const [showDialog, setShowDialog] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    url: '',
+    resource_type: 'article',
+    category_id: '',
+    difficulty_level: 'beginner',
+    tags: '',
+  });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchCategories();
+    fetchResources();
   }, []);
+
+  const fetchResources = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('resources')
+        .select(`*, category:categories(name, color), author:profiles(display_name)`)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      // Combine real data with dummy data for showcase
+      const realResources = data || [];
+      setResources([...realResources, ...dummyResources]);
+    } catch (error) {
+      // If Supabase fails, still show dummy data
+      setResources(dummyResources);
+      toast({ title: 'Error', description: 'Failed to load resources', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchCategories = async () => {
     try {
@@ -320,6 +317,37 @@ export default function Resources() {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      toast({ title: 'Login required', description: 'Please log in to share a resource.', variant: 'destructive' });
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from('resources').insert({
+        title: formData.title,
+        description: formData.description,
+        url: formData.url,
+        resource_type: formData.resource_type,
+        category_id: formData.category_id || null,
+        difficulty_level: formData.difficulty_level,
+        tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
+        author_id: user.id,
+        is_approved: false,
+      });
+      if (error) throw error;
+      toast({ title: 'Resource submitted!', description: 'Your resource will be reviewed before appearing.', variant: 'success' });
+      setShowDialog(false);
+      setFormData({ title: '', description: '', url: '', resource_type: 'article', category_id: '', difficulty_level: 'beginner', tags: '' });
+      fetchResources();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to submit resource', variant: 'destructive' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const filteredResources = resources.filter(resource => {
     const matchesCategory = selectedCategory === 'all' || resource.category_id === selectedCategory;
     const matchesType = selectedType === 'all' || resource.resource_type === selectedType;
@@ -380,6 +408,83 @@ export default function Resources() {
               </div>
             </div>
             
+        {user && (
+          <div className="flex justify-end mb-4">
+            <Dialog open={showDialog} onOpenChange={setShowDialog}>
+              <DialogTrigger asChild>
+                <Button className="bg-green-screen-200 hover:bg-green-screen-300 text-green-screen-400">
+                  Share a Resource
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Share a Resource</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <Label htmlFor="title">Title</Label>
+                    <Input id="title" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} required />
+                  </div>
+                  <div>
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea id="description" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} required />
+                  </div>
+                  <div>
+                    <Label htmlFor="url">URL</Label>
+                    <Input id="url" value={formData.url} onChange={e => setFormData({ ...formData, url: e.target.value })} type="url" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label htmlFor="resource_type">Type</Label>
+                      <Select value={formData.resource_type} onValueChange={v => setFormData({ ...formData, resource_type: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="article">Article</SelectItem>
+                          <SelectItem value="video">Video</SelectItem>
+                          <SelectItem value="podcast">Podcast</SelectItem>
+                          <SelectItem value="exercise">Exercise</SelectItem>
+                          <SelectItem value="book">Book</SelectItem>
+                          <SelectItem value="link">Link</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="difficulty_level">Difficulty</Label>
+                      <Select value={formData.difficulty_level} onValueChange={v => setFormData({ ...formData, difficulty_level: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="beginner">Beginner</SelectItem>
+                          <SelectItem value="intermediate">Intermediate</SelectItem>
+                          <SelectItem value="advanced">Advanced</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="category_id">Category</Label>
+                    <Select value={formData.category_id} onValueChange={v => setFormData({ ...formData, category_id: v })}>
+                      <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
+                      <SelectContent>
+                        {categories.map(cat => (
+                          <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="tags">Tags (comma separated)</Label>
+                    <Input id="tags" value={formData.tags} onChange={e => setFormData({ ...formData, tags: e.target.value })} />
+                  </div>
+                  <div className="flex justify-end">
+                    <Button type="submit" disabled={submitting} className="bg-green-screen-200 hover:bg-green-screen-300 text-green-screen-400">
+                      {submitting ? 'Submitting...' : 'Submit'}
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
         {/* Filters */}
         <Card>
           <CardContent className="pt-6">

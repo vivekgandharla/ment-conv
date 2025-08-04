@@ -16,6 +16,7 @@ import Waitlist from "./pages/Waitlist";
 import Profile from "./pages/Profile";
 import ExpertVerification from "./pages/ExpertVerification";
 import ModeratorApplication from "./pages/ModeratorApplication";
+import Test from "./pages/Test";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
         <Route path="/profile/:userId" element={<Profile />} />
         <Route path="/expert-verification" element={<ExpertVerification />} />
         <Route path="/moderator-application" element={<ModeratorApplication />} />
+        <Route path="/test" element={<Test />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
