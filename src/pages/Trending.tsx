@@ -152,20 +152,20 @@ export default function Trending() {
             <div>
               <h1 className="text-3xl font-bold text-green-screen-400 flex items-center gap-2">
                 <TrendingUp className="h-8 w-8" />
-                Trending Now
-              </h1>
+                  Trending Now
+                </h1>
               <p className="text-muted-foreground mt-2">
                 Discover what's popular in the MentConv community
               </p>
             </div>
             <Button asChild className="bg-green-screen-200 hover:bg-green-screen-300 text-green-screen-400">
-              <Link to="/discussions">
-                View All Discussions
+                <Link to="/discussions">
+                  View All Discussions
                 <ChevronRight className="h-4 w-4 ml-1" />
-              </Link>
-            </Button>
+                </Link>
+              </Button>
           </div>
-
+          
           {/* Trending Discussions */}
           <div className="space-y-6">
             <h2 className="text-xl font-semibold text-green-screen-400">Trending Discussions</h2>
@@ -193,7 +193,7 @@ export default function Trending() {
               </Card>
             ) : (
               <div className="space-y-4">
-                {trendingDiscussions.map((discussion, index) => (
+              {trendingDiscussions.map((discussion, index) => (
                   <Card key={discussion.id} className="hover:shadow-md transition-shadow cursor-pointer">
                     <CardContent className="pt-6">
                       <div className="flex items-start space-x-4">
@@ -206,17 +206,17 @@ export default function Trending() {
                                 style={{ backgroundColor: discussion.category.color }}
                               >
                                 {discussion.category.name}
-                              </Badge>
+                    </Badge>
                             )}
                             <span className="text-sm text-muted-foreground">
                               {formatTimeAgo(discussion.created_at)}
                             </span>
-                          </div>
-                          
+                  </div>
+                  
                           <h3 className="text-lg font-semibold text-green-screen-400 hover:text-green-screen-300">
-                            {discussion.title}
-                          </h3>
-                          
+                      {discussion.title}
+                  </h3>
+                  
                           <p className="text-muted-foreground line-clamp-2">
                             {discussion.content}
                           </p>
@@ -235,7 +235,7 @@ export default function Trending() {
                                 <Heart className="w-4 h-4" />
                                 <span>{formatNumber(discussion.upvote_count)} likes</span>
                               </div>
-                            </div>
+                      </div>
 
                             <div className="flex items-center space-x-2">
                               <Avatar className="w-6 h-6">
@@ -246,11 +246,11 @@ export default function Trending() {
                               </Avatar>
                               <span className="text-sm text-muted-foreground">
                                 {discussion.author?.display_name || 'Unknown'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      </span>
+                    </div>
+                    </div>
+                  </div>
+                </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -259,14 +259,14 @@ export default function Trending() {
 
             <div className="text-center">
               <Button asChild variant="outline" className="border-green-screen-200 text-green-screen-400 hover:bg-green-screen-50">
-                <Link to="/discussions">
-                  See More Discussions
-                </Link>
-              </Button>
+                  <Link to="/discussions">
+                    See More Discussions
+                  </Link>
+                </Button>
+              </div>
             </div>
-          </div>
-        </div>
-
+                </div>
+                
         {/* Sidebar */}
         <div className="lg:col-span-1 space-y-6">
           {/* Trending Topics */}
@@ -282,20 +282,20 @@ export default function Trending() {
                 {trendingTopics.slice(0, 8).map((topic, index) => (
                   <div key={index} className="flex items-center justify-between">
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                      {topic.name}
-                    </span>
+                          {topic.name}
+                        </span>
                     <Badge variant="secondary" className="bg-green-screen-100 text-green-screen-400">
-                      {topic.count}
+                        {topic.count}
                     </Badge>
-                  </div>
-                ))}
-              </div>
+                    </div>
+                  ))}
+                </div>
               <div className="mt-4">
                 <Button asChild variant="outline" size="sm" className="w-full border-green-screen-200 text-green-screen-400 hover:bg-green-screen-50">
                   <Link to="/discussions">
                     View All Topics
                   </Link>
-                </Button>
+                  </Button>
               </div>
             </CardContent>
           </Card>
@@ -309,11 +309,11 @@ export default function Trending() {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-green-screen-400 mb-2">
-                    Join The Conversation
+                  Join The Conversation
                   </h3>
                   <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">
-                    Share your experiences, ask questions, and connect with others who understand what you're going through.
-                  </p>
+                  Share your experiences, ask questions, and connect with others who understand what you're going through.
+                </p>
                 </div>
                 <Button asChild className="w-full bg-green-screen-200 hover:bg-green-screen-300 text-green-screen-400">
                   <Link to="/waitlist">
@@ -362,7 +362,7 @@ export default function Trending() {
               </div>
             </CardContent>
           </Card>
-        </div>
+            </div>
           </div>
         </div>
       </main>

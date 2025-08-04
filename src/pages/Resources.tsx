@@ -370,7 +370,7 @@ export default function Resources() {
               <div className="flex justify-center">
                 <div className="w-16 h-16 bg-green-screen-100 rounded-full flex items-center justify-center">
                   <BookOpen className="w-8 h-8 text-green-screen-400" />
-                </div>
+          </div>
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-green-screen-400">Mental Health Resources</h1>
@@ -379,7 +379,7 @@ export default function Resources() {
                 </p>
               </div>
             </div>
-
+            
         {/* Filters */}
         <Card>
           <CardContent className="pt-6">
@@ -459,14 +459,14 @@ export default function Resources() {
                   <div className="flex items-center space-x-2">
                     <div className="p-2 bg-green-screen-100 rounded-lg">
                       {getResourceIcon(resource.resource_type)}
-                    </div>
+                </div>
                     <div>
                       <Badge 
                         variant="secondary" 
                         className="text-xs"
                       >
                         {getResourceTypeLabel(resource.resource_type)}
-                      </Badge>
+                    </Badge>
                     </div>
                   </div>
                   <div className="flex items-center space-x-1">
@@ -489,10 +489,10 @@ export default function Resources() {
                       className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <Share2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                
+                  </Button>
+            </div>
+          </div>
+          
                 <div className="space-y-2">
                   <CardTitle className="text-lg line-clamp-2 group-hover:text-green-screen-400 transition-colors">
                     {resource.title}
@@ -511,14 +511,14 @@ export default function Resources() {
                       {resource.tags?.slice(0, 2).map((tag, index) => (
                         <Badge key={index} variant="outline" className="text-xs">
                           {tag}
-                        </Badge>
+                  </Badge>
                       ))}
                       {resource.tags && resource.tags.length > 2 && (
                         <Badge variant="outline" className="text-xs">
                           +{resource.tags.length - 2}
-                        </Badge>
+                  </Badge>
                       )}
-                    </div>
+                </div>
                     {getDifficultyBadge(resource.difficulty_level)}
                   </div>
 
@@ -529,7 +529,7 @@ export default function Resources() {
                         <Star className="w-4 h-4 text-yellow-500 fill-current" />
                         <span>{resource.rating?.toFixed(1) || 'N/A'}</span>
                         <span>({resource.rating_count})</span>
-                      </div>
+                    </div>
                       <div className="flex items-center space-x-1">
                         <Eye className="w-4 h-4" />
                         <span>{resource.view_count.toLocaleString()}</span>
@@ -538,9 +538,9 @@ export default function Resources() {
                     <div className="flex items-center space-x-1">
                       <Calendar className="w-4 h-4" />
                       <span>{new Date(resource.created_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-
+                </div>
+              </div>
+              
                   {/* Author and Category */}
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center space-x-1">
@@ -567,10 +567,10 @@ export default function Resources() {
                     >
                       <ExternalLink className="w-4 h-4 mr-2" />
                       View Resource
-                    </Button>
+                        </Button>
                     <Button variant="outline" size="sm">
                       <Heart className="w-4 h-4" />
-                    </Button>
+                        </Button>
                   </div>
                 </div>
               </CardContent>
@@ -613,7 +613,7 @@ export default function Resources() {
                   <Icon className="w-8 h-8 mx-auto text-green-screen-400 mb-2" />
                   <h4 className="font-medium text-green-screen-400">{label}</h4>
                   <p className="text-sm text-muted-foreground">{count} resources</p>
-                </div>
+              </div>
               ))}
             </div>
           </CardContent>

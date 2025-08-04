@@ -499,7 +499,7 @@ export default function Discussions() {
       default: return <LinkIcon className="h-4 w-4" />;
     }
   };
-
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -508,16 +508,16 @@ export default function Discussions() {
           <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
-              <div>
+            <div>
                 <h1 className="text-3xl font-bold text-green-screen-400">Discussions</h1>
                 <p className="text-muted-foreground">Join the conversation and share your thoughts</p>
-              </div>
+            </div>
               <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
                 <DialogTrigger asChild>
                   <Button className="bg-green-screen-200 hover:bg-green-screen-300 text-green-screen-400">
                     <Plus className="w-4 h-4 mr-2" />
                     New Discussion
-                  </Button>
+              </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl">
                   <DialogHeader>
@@ -586,20 +586,20 @@ export default function Discussions() {
                     <div className="flex justify-end space-x-2">
                       <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
                         Cancel
-                      </Button>
-                      <Button 
+              </Button>
+              <Button
                         onClick={handleCreateDiscussion}
                         disabled={!formData.title || !formData.content}
                         className="bg-green-screen-200 hover:bg-green-screen-300 text-green-screen-400"
-                      >
+              >
                         Create Discussion
-                      </Button>
-                    </div>
+              </Button>
+            </div>
                   </div>
                 </DialogContent>
               </Dialog>
-            </div>
-
+          </div>
+          
             {/* Filters */}
             <div className="flex flex-wrap gap-4 items-center">
               <div className="flex items-center space-x-2">
@@ -636,7 +636,7 @@ export default function Discussions() {
                 </SelectContent>
               </Select>
             </div>
-
+            
             {/* Discussions List */}
             <div className="space-y-4">
               {loading ? (
@@ -745,7 +745,7 @@ export default function Discussions() {
           </div>
         </div>
       </main>
-
+      
       {/* Discussion Dialog */}
       <Dialog open={showDiscussionDialog} onOpenChange={setShowDiscussionDialog}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
