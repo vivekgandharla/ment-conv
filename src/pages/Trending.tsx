@@ -301,7 +301,7 @@ export default function Trending() {
           <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
-              <div>
+            <div>
                 <h1 className="text-3xl font-bold text-green-screen-400">Trending</h1>
                 <p className="text-slate-600 dark:text-slate-300">
                   Discover what's popular in the mental health community
@@ -320,7 +320,7 @@ export default function Trending() {
                 </Select>
               </div>
             </div>
-
+            
             {/* Trending Topics Overview */}
             <Card>
               <CardHeader>
@@ -345,7 +345,7 @@ export default function Trending() {
                       </div>
                     </div>
                   ))}
-                </div>
+                  </div>
               </CardContent>
             </Card>
 
@@ -372,8 +372,8 @@ export default function Trending() {
                           </Badge>
                           <span className="text-xs text-slate-500 dark:text-slate-400">
                             {formatTimeAgo(discussion.created_at)}
-                          </span>
-                        </div>
+                        </span>
+                      </div>
                         <h3 className="text-lg font-semibold mb-2 text-slate-800 dark:text-slate-200 hover:text-green-screen-400 transition-colors">
                           {discussion.title}
                         </h3>
@@ -400,13 +400,13 @@ export default function Trending() {
                             <div className="flex items-center space-x-1">
                               <MessageSquare className="h-4 w-4" />
                               <span>{formatNumber(discussion.comment_count)}</span>
-                            </div>
+                    </div>
                             <div className="flex items-center space-x-1">
                               <Heart className="h-4 w-4" />
                               <span>{formatNumber(discussion.upvote_count)}</span>
-                            </div>
-                          </div>
-                        </div>
+                    </div>
+                  </div>
+                </div>
                       </CardContent>
                     </Card>
                   ))}
@@ -423,8 +423,8 @@ export default function Trending() {
                             {getResourceIcon(resource.resource_type)}
                             <span className="text-xs text-slate-500 dark:text-slate-400 capitalize">
                               {resource.resource_type}
-                            </span>
-                          </div>
+                        </span>
+                      </div>
                           <div className="flex items-center space-x-1">
                             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                             <span className="text-sm font-medium">{resource.rating}</span>
@@ -443,7 +443,7 @@ export default function Trending() {
                             <span>•</span>
                             <span>{formatNumber(resource.review_count)} reviews</span>
                           </div>
-                        </div>
+                    </div>
                       </CardContent>
                     </Card>
                   ))}
@@ -525,8 +525,8 @@ export default function Trending() {
                         <div className="flex items-center justify-between">
                           <span className="text-sm">Resource Shares</span>
                           <span className="font-semibold text-green-screen-400">+15%</span>
-                        </div>
-                      </div>
+                </div>
+              </div>
                     </CardContent>
                   </Card>
                   
@@ -547,8 +547,8 @@ export default function Trending() {
                                 />
                               </div>
                               <span className="text-xs text-slate-500">{topic.count}</span>
-                            </div>
-                          </div>
+              </div>
+            </div>
                         ))}
                       </div>
                     </CardContent>

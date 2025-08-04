@@ -447,7 +447,7 @@ export default function Resources() {
                           <SelectItem value="link">Link</SelectItem>
                         </SelectContent>
                       </Select>
-                    </div>
+              </div>
                     <div>
                       <Label htmlFor="difficulty_level">Difficulty</Label>
                       <Select value={formData.difficulty_level} onValueChange={v => setFormData({ ...formData, difficulty_level: v })}>
@@ -458,8 +458,8 @@ export default function Resources() {
                           <SelectItem value="advanced">Advanced</SelectItem>
                         </SelectContent>
                       </Select>
-                    </div>
-                  </div>
+            </div>
+          </div>
                   <div>
                     <Label htmlFor="category_id">Category</Label>
                     <Select value={formData.category_id} onValueChange={v => setFormData({ ...formData, category_id: v })}>
@@ -470,7 +470,7 @@ export default function Resources() {
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
+                </div>
                   <div>
                     <Label htmlFor="tags">Tags (comma separated)</Label>
                     <Input id="tags" value={formData.tags} onChange={e => setFormData({ ...formData, tags: e.target.value })} />
@@ -478,8 +478,8 @@ export default function Resources() {
                   <div className="flex justify-end">
                     <Button type="submit" disabled={submitting} className="bg-green-screen-200 hover:bg-green-screen-300 text-green-screen-400">
                       {submitting ? 'Submitting...' : 'Submit'}
-                    </Button>
-                  </div>
+                  </Button>
+                </div>
                 </form>
               </DialogContent>
             </Dialog>

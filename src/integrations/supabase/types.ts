@@ -720,6 +720,11 @@ export type CompositeTypes<
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
+export type Discussion = Tables<'discussions'> & {
+  author?: Tables<'profiles'>;
+  category?: Tables<'categories'>;
+};
+
 export const Constants = {
   public: {
     Enums: {
